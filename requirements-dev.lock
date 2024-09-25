@@ -7,6 +7,7 @@
 #   all-features: false
 #   with-sources: false
 #   generate-hashes: false
+#   universal: false
 
 -e file:auth
 -e file:classification
@@ -19,6 +20,8 @@ annotated-types==0.7.0
 anyio==4.4.0
     # via httpx
     # via jupyter-server
+appnope==0.1.4
+    # via ipykernel
 apscheduler==3.10.4
     # via flask-apscheduler
 argon2-cffi==23.1.0
