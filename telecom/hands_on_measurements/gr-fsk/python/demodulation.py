@@ -24,13 +24,41 @@ import numpy as np
 from gnuradio import gr
 
 
-def demodulate(y, B, R, Fdev):
+def demodulate(y: np.array, B: int, R: int, Fdev: float) -> np.array:
     """
-    Non-coherent demodulator.
+    Demodulate a received sample vector `y`, with oversampling factor `R`, a bandwidth `B` and a frequency deviation `Fdev`.
+
+    Args:
+        y (np.array): array of samples
+        B (int): bandwidth
+        R (int): oversampling factor
+        Fdev (float): carrier frequency deviation
+
+    Returns:
+        np.array: array of estimated demodulated symbols
     """
-    nb_syms = int(len(y) / R)
-    bits_hat = np.zeros(nb_syms, dtype=int)
-    return bits_hat  # TODO
+
+    nb_syms = len(y) // R  # Number of CPFSK symbols in y
+
+    # Group symbols together, in a matrix. Each row contains the R samples over one symbol period
+    y = np.resize(y, (nb_syms, R))
+
+    # generate the reference waveforms used for the correlation
+    exp_plus = np.exp(1j * 2 * np.pi * Fdev * ((np.arange(R) * B) / R))
+    exp_minus = np.exp(-1j * 2 * np.pi * Fdev * ((np.arange(R) * B) / R))
+
+    # compute the correlations with the two reference waveforms (r0 and r1)
+    bits_hat: np.array = np.zeros(nb_syms, dtype=int)
+
+    for k in range(nb_syms):
+        r0 = np.abs(np.dot(y[k], exp_plus))
+        r1 = np.abs(np.dot(y[k], exp_minus))
+
+        # performs the decision based on r0 and r1
+
+        bits_hat[k] = 0 if r0 > r1 else 1
+
+    return bits_hat
 
 
 class demodulation(gr.basic_block):
