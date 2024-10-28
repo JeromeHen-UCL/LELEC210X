@@ -54,7 +54,7 @@ def demodulate(y: np.array, B: int, R: int, Fdev: float) -> np.array:
     r1 = np.abs(y @ exp_minus)
 
     # Perform the decision for each symbol based on the correlations
-    bits_hat = (r1 > r0).astype(int)
+    bits_hat = (r1 < r0).astype(int)
 
     return bits_hat
 

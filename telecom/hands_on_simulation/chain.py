@@ -24,6 +24,7 @@ class Chain:
 
     # Simulation parameters
     n_packets: int = 100  # Number of sent packets
+    # R3: n_packets is relative to BER curve precision
 
     # Channel parameters
     sto_val: float = 0
@@ -209,6 +210,6 @@ class BasicChain(Chain):
         r1 = np.abs(y @ exp_minus)
 
         # Perform the decision for each symbol based on the correlations
-        bits_hat = (r1 > r0).astype(int)
+        bits_hat = (r1 < r0).astype(int)
 
         return bits_hat
