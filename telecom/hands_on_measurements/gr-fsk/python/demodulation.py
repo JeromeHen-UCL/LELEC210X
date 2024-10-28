@@ -50,13 +50,11 @@ def demodulate(y: np.array, B: int, R: int, Fdev: float) -> np.array:
     # compute the correlations with the two reference waveforms (r0 and r1)
     bits_hat: np.array = np.zeros(nb_syms, dtype=int)
 
-    for k in range(nb_syms):
-        r0 = np.abs(np.dot(y[k], exp_plus))
-        r1 = np.abs(np.dot(y[k], exp_minus))
+    r0 = np.abs(y @ exp_plus)
+    r1 = np.abs(y @ exp_minus)
 
-        # performs the decision based on r0 and r1
-
-        bits_hat[k] = 0 if r0 > r1 else 1
+    # Perform the decision for each symbol based on the correlations
+    bits_hat = (r1 > r0).astype(int)
 
     return bits_hat
 

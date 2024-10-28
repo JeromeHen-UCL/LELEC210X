@@ -41,8 +41,8 @@ def cfo_estimation(y, B, R, Fdev) -> float:
         float: estimated frequency deviation
     """
 
-    N = int(32 / 4)  # number of symbols in preamble, /!\ DIVIDED by 4 to pad
-    Nt = N * R  # number of symbols to run moose 🦌 on
+    N = 2  # number of symbols
+    Nt = N * R  # number of samples to run moose 🦌 on
     T = 1 / B
 
     # extract 2 blocks of size N*R at the start of y

@@ -141,15 +141,15 @@ class BasicChain(Chain):
 
         return None
 
-    bypass_cfo_estimation = True
+    bypass_cfo_estimation = False
 
     def cfo_estimation(self, y: np.array):
         """
         Estimates CFO using Moose algorithm, on first samples of preamble.
         """
         R = self.osr_rx
-        N = int(len(self.preamble) / 4)  # number of symbols in preamble, /!\ DIVIDED by 4 to pad
-        Nt = N * R  # number of symbols to run moose 🦌 on
+        N = 2  # number of symbols
+        Nt = N * R  # number of samples to run moose 🦌 on
         T = 1 / self.bit_rate
 
         # extract 2 blocks of size N*R at the start of y
@@ -163,7 +163,7 @@ class BasicChain(Chain):
 
         return cfo_est
 
-    bypass_sto_estimation = True
+    bypass_sto_estimation = False
 
     def sto_estimation(self, y):
         """
@@ -205,12 +205,10 @@ class BasicChain(Chain):
         # compute the correlations with the two reference waveforms (r0 and r1)
         bits_hat: np.array = np.zeros(nb_syms, dtype=int)
 
-        for k in range(nb_syms):
-            r0 = np.abs(np.dot(y[k], exp_plus))
-            r1 = np.abs(np.dot(y[k], exp_minus))
+        r0 = np.abs(y @ exp_plus)
+        r1 = np.abs(y @ exp_minus)
 
-            # performs the decision based on r0 and r1
-
-            bits_hat[k] = 0 if r0 > r1 else 1
+        # Perform the decision for each symbol based on the correlations
+        bits_hat = (r1 > r0).astype(int)
 
         return bits_hat
