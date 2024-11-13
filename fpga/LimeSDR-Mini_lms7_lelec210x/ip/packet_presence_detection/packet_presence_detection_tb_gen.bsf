@@ -76,7 +76,7 @@ refer to the applicable agreement for further details.
 		(text "source" (rect 161 43 358 99)(font "Arial" (color 128 0 0)(font_size 9)))
 		(text "data" (rect 139 67 302 144)(font "Arial" (color 0 0 0)))
 		(text "valid" (rect 137 83 304 176)(font "Arial" (color 0 0 0)))
-		(text " system " (rect 237 184 522 378)(font "Arial" ))
+		(text " packet_presence_detection_tb_gen " (rect 117 184 438 378)(font "Arial" ))
 		(line (pt 96 32)(pt 160 32)(line_width 1))
 		(line (pt 160 32)(pt 160 184)(line_width 1))
 		(line (pt 96 184)(pt 160 184)(line_width 1))
