@@ -1,3 +1,4 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from chain import Chain
@@ -19,7 +20,8 @@ def add_delay(chain: Chain, x: np.ndarray, tau: float):
         sto_frac * R
     ).astype(
         int
-    )  # Index of best sample (available in transmitted signal oversampled at TX) depicting the fractional delay
+        # Index of best sample (available in transmitted signal oversampled at TX) depicting the fractional delay
+    )
 
     y = np.concatenate(
         (np.zeros(sto_int), x[idx::R])
@@ -64,7 +66,7 @@ def run_sim(chain: Chain):
     x_pr = chain.modulate(chain.preamble)  # Modulated signal containing preamble
     x_sync = chain.modulate(chain.sync_word)  # Modulated signal containing sync_word
     x_noise = np.zeros(
-        chain.payload_len * chain.osr_tx
+        chain.packet_len * chain.osr_tx
     )  # Padding some zeros before the packets
 
     # Lowpass filter taps
@@ -75,7 +77,7 @@ def run_sim(chain: Chain):
     # For loop on the number of packets to send
     for n in range(chain.n_packets):
         # Random generation of payload bits
-        bits = rng.integers(2, size=chain.payload_len)
+        bits = rng.integers(2, size=chain.packet_len)
 
         # Transmitted signal
         x_pay = chain.modulate(bits)  # Modulated signal with payload
@@ -89,7 +91,7 @@ def run_sim(chain: Chain):
 
         y, sto_idx = add_delay(chain, x, tau)  # Delay addition
         start_idx = (
-            int(tau * chain.osr_rx * B) + chain.payload_len * chain.osr_rx
+            int(tau * chain.osr_rx * B) + chain.packet_len * chain.osr_rx
         )  # Delay + noise in beginning, for STO metric
 
         if np.isnan(chain.cfo_val):  # CFO should be random
@@ -114,17 +116,17 @@ def run_sim(chain: Chain):
 
             # SNR estimation
             noise_power_est = np.mean(
-                np.abs(y_filt[0 : chain.payload_len * chain.osr_rx]) ** 2
+                np.abs(y_filt[0: chain.packet_len * chain.osr_rx]) ** 2
             )
             signal_energy_est = (
-                np.mean(np.abs(y_filt[-chain.payload_len * chain.osr_rx :]) ** 2)
+                np.mean(np.abs(y_filt[-chain.packet_len * chain.osr_rx:]) ** 2)
                 - noise_power_est
             )
             SNR_est = signal_energy_est / noise_power_est
 
             SNR_est_matrix[k, n] = SNR_est
 
-            ## Preamble detection stage
+            # Preamble detection stage
             if chain.bypass_preamble_detect:
                 detect_idx = start_idx
             else:
@@ -156,7 +158,7 @@ def run_sim(chain: Chain):
 
                 y_detect = y_filt[detect_idx:]
 
-                ## Synchronization stage
+                # Synchronization stage
                 # CFO estimation and correction
                 if chain.bypass_cfo_estimation:
                     cfo_hat = cfo
@@ -179,7 +181,7 @@ def run_sim(chain: Chain):
 
                 y_sync = y_sync[tau_hat:]
 
-                ## Demodulation and deframing stage
+                # Demodulation and deframing stage
                 bits_hat = chain.demodulate(y_sync)
 
                 if (
@@ -199,10 +201,10 @@ def run_sim(chain: Chain):
                     start_frame = np.argmax(v) + 1
 
                 bits_hat_pay = bits_hat[
-                    start_frame : start_frame + chain.payload_len
+                    start_frame: start_frame + chain.packet_len
                 ]  # Demodulated payload bits
 
-                ## Computing performance metrics
+                # Computing performance metrics
                 if len(bits) == len(bits_hat_pay) and not preamble_error:
                     errors = bits ^ bits_hat_pay
 
@@ -224,7 +226,7 @@ def run_sim(chain: Chain):
             ) ** 2
 
     # Metrics
-    BER = bit_errors / chain.payload_len / chain.n_packets
+    BER = bit_errors / chain.packet_len / chain.n_packets
     PER = packet_errors / chain.n_packets
     RMSE_cfo = np.sqrt(cfo_err / chain.n_packets) / B
     RMSE_sto = np.sqrt(sto_err / chain.n_packets) * B
@@ -261,8 +263,9 @@ def run_sim(chain: Chain):
     print(SNRs_dB - shift_SNR_filter + shift_SNR_out)
     print(shift_SNR_out)
     print(shift_SNR_filter)
-    ### Plot dashboard
 
+
+    ### Plot dashboard
     fig, ax1 = plt.subplots()
     w, h = freqz(taps)
     f = w * fs * 0.5 / np.pi
@@ -277,6 +280,7 @@ def run_sim(chain: Chain):
     ax2.grid(True)
     ax2.axis("tight")
     plt.show()
+    # plt.savefig("FIR_Amplitude.svg")
 
     # Bit error rate
     fig, ax = plt.subplots(constrained_layout=True)
@@ -312,13 +316,13 @@ def run_sim(chain: Chain):
     # Packet error rate
     fig, ax = plt.subplots(constrained_layout=True)
     ax.plot(SNRs_dB + shift_SNR_out, PER, "-s", label="Simulation")
-    ax.plot(SNR_th, 1 - (1 - BER_th) ** chain.payload_len, label="AWGN Th. FSK")
+    ax.plot(SNR_th, 1 - (1 - BER_th) ** chain.packet_len, label="AWGN Th. FSK")
     ax.plot(
         SNR_th,
-        1 - (1 - BER_th_noncoh) ** chain.payload_len,
+        1 - (1 - BER_th_noncoh) ** chain.packet_len,
         label="AWGN Th. FSK non-coh.",
     )
-    ax.plot(SNR_th, 1 - (1 - BER_th_BPSK) ** chain.payload_len, label="AWGN Th. BPSK")
+    ax.plot(SNR_th, 1 - (1 - BER_th_BPSK) ** chain.packet_len, label="AWGN Th. BPSK")
     ax.set_ylabel("PER")
     ax.set_xlabel("SNR$_{o}$ [dB]")
     ax.set_yscale("log")
@@ -355,24 +359,26 @@ def run_sim(chain: Chain):
     plt.grid()
     plt.legend()
     plt.show()
+    # plt.savefig("")
 
     # RMSE CFO
-    #    plt.figure()
-    #    plt.semilogy(SNRs_dB, RMSE_cfo, "-s")
-    #    plt.title("RMSE CFO")
-    #    plt.ylabel("RMSE [-]")
-    #    plt.xlabel("SNR [dB]")
-    #    plt.grid()
-    #    plt.show()
-    #
-    #    # RMSE STO
-    #    plt.figure()
-    #    plt.semilogy(SNRs_dB, RMSE_sto, "-s")
-    #    plt.title("RMSE STO")
-    #    plt.ylabel("RMSE [-]")
-    #    plt.xlabel("SNR [dB]")
-    #    plt.grid()
-    #    plt.show()
+    plt.figure()
+    plt.semilogy(SNRs_dB, RMSE_cfo, "-s")
+    plt.title("RMSE CFO")
+    plt.ylabel("RMSE [-]")
+    plt.xlabel("SNR [dB]")
+    plt.grid()
+    plt.show()
+
+    # RMSE STO
+    plt.figure()
+    plt.semilogy(SNRs_dB, RMSE_sto, "-s")
+    plt.title("RMSE STO")
+    plt.ylabel("RMSE [-]")
+    plt.xlabel("SNR [dB]")
+    plt.grid()
+    plt.show()
+    # plt.savefig("RMSE STO.svg")
 
     # Save simulation outputs (for later post-processing, building new figures,...)
     test_name = "test"
@@ -397,6 +403,8 @@ def run_sim(chain: Chain):
 
 if __name__ == "__main__":
     from chain import BasicChain
+
+    matplotlib.use("agg")
 
     chain = BasicChain()
     run_sim(chain)

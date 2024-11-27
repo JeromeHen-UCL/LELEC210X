@@ -20,10 +20,11 @@ class Chain:
     preamble: np.ndarray = PREAMBLE
     sync_word: np.ndarray = SYNC_WORD
 
-    payload_len: int = 50  # Number of bits per packet
+    packet_len: int = 50  # Number of bits per packet, "N"
 
     # Simulation parameters
     n_packets: int = 100  # Number of sent packets
+    # R3: n_packets is relative to BER curve precision
 
     # Channel parameters
     sto_val: float = 0
@@ -53,7 +54,7 @@ class Chain:
         :return: The modulates bit sequence, (N * R,).
         """
         fd = self.freq_dev  # Frequency deviation, Delta_f
-        B = self.bit_rate  # B=1/T
+        B = self.bit_rate  # B = 1/T
         h = 2 * fd / B  # Modulation index
         R = self.osr_tx  # Oversampling factor
 
@@ -66,7 +67,7 @@ class Chain:
         phase_shifts[0] = 0  # Initial phase
 
         for i, b in enumerate(bits):
-            x[i * R : (i + 1) * R] = np.exp(1j * phase_shifts[i]) * np.exp(
+            x[i * R: (i + 1) * R] = np.exp(1j * phase_shifts[i]) * np.exp(
                 1j * (1 if b else -1) * ph
             )  # Sent waveforms, with starting phase coming from previous symbol
             phase_shifts[i + 1] = phase_shifts[i] + h * np.pi * (
@@ -125,7 +126,7 @@ class BasicChain(Chain):
 
     cfo_val, sto_val = np.nan, np.nan  # CFO and STO are random
 
-    bypass_preamble_detect = True
+    bypass_preamble_detect = False
 
     def preamble_detect(self, y):
         """
@@ -135,26 +136,35 @@ class BasicChain(Chain):
         y_abs = np.abs(y)
 
         for i in range(0, int(len(y) / L)):
-            sum_abs = np.sum(y_abs[i * L : (i + 1) * L])
+            sum_abs = np.sum(y_abs[i * L: (i + 1) * L])
             if sum_abs > (L - 1):  # fix threshold
                 return i * L
 
         return None
 
-    bypass_cfo_estimation = True
+    bypass_cfo_estimation = False
 
-    def cfo_estimation(self, y):
+    def cfo_estimation(self, y: np.array):
         """
         Estimates CFO using Moose algorithm, on first samples of preamble.
         """
-        # TO DO: extract 2 blocks of size N*R at the start of y
+        R = self.osr_rx
+        N = 2  # number of symbols
+        Nt = N * R  # number of samples to run moose 🦌 on
+        T = 1 / self.bit_rate
 
-        # TO DO: apply the Moose algorithm on these two blocks to estimate the CFO
-        cfo_est = 0
+        # extract 2 blocks of size N*R at the start of y
+        y_begin = y[:2*Nt]
+
+        # apply the Moose algorithm on these two blocks to estimate the CFO
+        numerator = np.angle(np.sum(y_begin[Nt: 2*Nt]*np.conj(y_begin[0:Nt])))
+        denominator = 2 * np.pi * Nt * T / R
+
+        cfo_est = numerator / denominator
 
         return cfo_est
 
-    bypass_sto_estimation = True
+    bypass_sto_estimation = False
 
     def sto_estimation(self, y):
         """
@@ -188,13 +198,18 @@ class BasicChain(Chain):
         # Group symbols together, in a matrix. Each row contains the R samples over one symbol period
         y = np.resize(y, (nb_syms, R))
 
-        # TO DO: generate the reference waveforms used for the correlation
+        # generate the reference waveforms used for the correlation
         # hint: look at what is done in modulate() in chain.py
+        exp_plus = np.exp(1j * 2 * np.pi * self.freq_dev * (np.arange(R) / (self.bit_rate * R)))
+        exp_minus = np.exp(-1j * 2 * np.pi * self.freq_dev * (np.arange(R) / (self.bit_rate * R)))
 
-        # TO DO: compute the correlations with the two reference waveforms (r0 and r1)
+        # compute the correlations with the two reference waveforms (r0 and r1)
+        bits_hat: np.array = np.zeros(nb_syms, dtype=int)
 
-        # TO DO: performs the decision based on r0 and r1
+        r0 = np.abs(y @ exp_plus)
+        r1 = np.abs(y @ exp_minus)
 
-        bits_hat = np.zeros(nb_syms, dtype=int)
+        # Perform the decision for each symbol based on the correlations
+        bits_hat = (r1 < r0).astype(int)
 
         return bits_hat

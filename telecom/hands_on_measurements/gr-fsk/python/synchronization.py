@@ -27,11 +27,34 @@ from gnuradio import gr
 from .utils import logging, measurements_logger
 
 
-def cfo_estimation(y, B, R, Fdev):
+def cfo_estimation(y, B, R, Fdev) -> float:
     """
-    Estimate CFO using Moose algorithm, on first samples of preamble
+    Estimate the carrier frequency deviation from a received sample vector `y`, with oversampling factor `R`, a bandwidth `B`.
+
+    Args:
+        y (np.array): array of samples
+        B (int): bandwidth
+        R (int): oversampling factor
+        Fdev (float): carrier frequency deviation. WTF do we need this for?
+
+    Returns:
+        float: estimated frequency deviation
     """
-    return 0.0  # TODO
+
+    N = 2  # number of symbols
+    Nt = N * R  # number of samples to run moose 🦌 on
+    T = 1 / B
+
+    # extract 2 blocks of size N*R at the start of y
+    y_begin = y[:2*Nt]
+
+    # apply the Moose algorithm on these two blocks to estimate the CFO
+    numerator = np.angle(np.sum(y_begin[Nt: 2*Nt]*np.conj(y_begin[0:Nt])))
+    denominator = 2 * np.pi * Nt * T / R
+
+    cfo_est = numerator / denominator
+
+    return cfo_est
 
 
 def sto_estimation(y, B, R, Fdev):
