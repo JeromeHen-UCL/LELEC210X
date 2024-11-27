@@ -7,7 +7,9 @@ import numpy as np
 import sounddevice as sd
 import soundfile as sf
 from numpy import ndarray
+from scipy import signal
 from scipy.signal import fftconvolve
+
 
 # -----------------------------------------------------------------------------
 """
@@ -66,7 +68,7 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        resig = signal.resample(sig, int(len(sig) * newsr / sr))
 
         return (resig, newsr)
 
@@ -85,7 +87,7 @@ class AudioUtil:
             # Truncate the signal to the given length at random position
             # begin_len = random.randint(0, max_len)
             begin_len = 0
-            sig = sig[begin_len : begin_len + max_len]
+            sig = sig[begin_len: begin_len + max_len]
 
         elif sig_len < max_len:
             # Length of padding to add at the beginning and end of the signal
@@ -122,9 +124,9 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        factor = random.randrange(1, scaling_limit * 1000)/1000
 
-        return audio
+        return (sig * factor, sr)
 
     def add_noise(audio, sigma=0.05) -> Tuple[ndarray, int]:
         """
@@ -135,11 +137,11 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        noise = np.random.normal(loc=0, scale=sigma, size=len(sig))
 
-        return audio
+        return (sig + noise, sr)
 
-    def echo(audio, nechos=2) -> Tuple[ndarray, int]:
+    def add_echo(audio, nechos=2) -> Tuple[ndarray, int]:
         """
         Add echo to the audio signal by convolving it with an impulse response. The taps are regularly spaced in time and each is twice smaller than the previous one.
 
@@ -150,9 +152,7 @@ class AudioUtil:
         sig_len = len(sig)
         echo_sig = np.zeros(sig_len)
         echo_sig[0] = 1
-        echo_sig[(np.arange(nechos) / nechos * sig_len).astype(int)] = (
-            1 / 2
-        ) ** np.arange(nechos)
+        echo_sig[(np.arange(nechos) / nechos * sig_len).astype(int)] = (1 / 2) ** np.arange(nechos)
 
         sig = fftconvolve(sig, echo_sig, mode="full")[:sig_len]
         return (sig, sr)
@@ -166,9 +166,8 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
-
-        return (sig, sr)
+        # FIXME: filt is any type
+        return (filt(sig), sr)
 
     def add_bg(
         audio, dataset, num_sources=1, max_ms=5000, amplitude_limit=0.1
@@ -184,9 +183,30 @@ class AudioUtil:
         """
         sig, sr = audio
 
-        ### TO COMPLETE
+        for _ in range(num_sources):
+            # randomly choose a background sound class and index
+            bg_class = random.choice(list(dataset.files.keys()))
+            bg_index = random.randrange(0, len(dataset.files[bg_class]))
 
-        return audio
+            # load and resample the background sound
+            bg = AudioUtil.open(dataset[(bg_class, bg_index)])
+            bg = AudioUtil.resample(bg, sr)
+            bg_sig, _ = bg
+
+            # trim or pad the background signal to match input signal's length
+            bg_length_samples = int((max_ms / 1000) * sr)
+            bg_sig = bg_sig[:bg_length_samples]  # trim to max_ms
+            if len(bg_sig) < len(sig):
+                bg_sig = np.pad(bg_sig, (0, len(sig) - len(bg_sig)), mode='constant')
+            else:
+                bg_sig = bg_sig[:len(sig)]  # truncate if bg_sig is longer
+
+            bg_sig = (bg_sig / np.max(np.abs(bg_sig))) * amplitude_limit
+
+            # add the background sound to the input signal
+            sig = sig + bg_sig
+
+        return (sig, sr)
 
     def specgram(audio, Nft=512, fs2=11025) -> ndarray:
         """
@@ -196,9 +216,10 @@ class AudioUtil:
         :param Nft: The number of points of the FFT.
         :param fs2: The sampling frequency.
         """
-        ### TO COMPLETE
-        # stft /= float(2**8)
-        return stft
+
+        resig, _ = AudioUtil.resample(audio, fs2)
+
+        return np.abs(librosa.stft(resig, n_fft=Nft, hop_length=Nft, window="rect", center=False))
 
     def get_hz2mel(fs2=11025, Nft=512, Nmel=20) -> ndarray:
         """
@@ -223,9 +244,16 @@ class AudioUtil:
         :param Nft: The number of points of the FFT.
         :param fs2: The sampling frequency.
         """
-        ### TO COMPLETE
 
-        return melspec
+        x_resampled = AudioUtil.resample(audio, fs2)
+
+        spec = AudioUtil.specgram(x_resampled, Nft=Nft)
+
+        mels = librosa.filters.mel(sr=fs2, n_fft=Nft, n_mels=Nmel)
+        mels = mels[:, :-1]
+        mels = mels / np.max(np.abs(mels))
+
+        return mels @ spec[1::]
 
     def spectro_aug_timefreq_masking(
         spec, max_mask_pct=0.1, n_freq_masks=1, n_time_masks=1
@@ -247,13 +275,13 @@ class AudioUtil:
         for _ in range(n_freq_masks):
             height = int(np.round(random.random() * freq_mask_param))
             pos_f = np.random.randint(Nmel - height)
-            aug_spec[pos_f : pos_f + height, :] = mask_value
+            aug_spec[pos_f: pos_f + height, :] = mask_value
 
         time_mask_param = max_mask_pct * n_steps
         for _ in range(n_time_masks):
             width = int(np.round(random.random() * time_mask_param))
             pos_t = np.random.randint(n_steps - width)
-            aug_spec[:, pos_t : pos_t + width] = mask_value
+            aug_spec[:, pos_t: pos_t + width] = mask_value
 
         return aug_spec
 
@@ -309,6 +337,7 @@ class Feature_vector_DS:
         aud = AudioUtil.resample(aud, self.sr)
         aud = AudioUtil.time_shift(aud, self.shift_pct)
         aud = AudioUtil.pad_trunc(aud, self.duration)
+        # aud = AudioUtil.normalize(aud, target_dB=10)
         if self.data_aug is not None:
             if "add_bg" in self.data_aug:
                 aud = AudioUtil.add_bg(
