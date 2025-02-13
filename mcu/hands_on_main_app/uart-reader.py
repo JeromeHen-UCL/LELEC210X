@@ -6,6 +6,7 @@ ELEC PROJECT - 210x
 import sys
 from sklearn.gaussian_process import GaussianProcessClassifier
 from sklearn.base import BaseEstimator, ClassifierMixin
+import requests
 import pickle  # for loading the model
 import argparse
 import sys
@@ -22,6 +23,9 @@ PRINT_PREFIX = "DF:HEX:"
 FREQ_SAMPLING = 10200
 MELVEC_LENGTH = 20
 N_MELVECS = 20
+
+HOSTNAME_LOCAL = "http://localhost:5000"
+HOSTNAME_CONTEST = "http://lelec210x.sipr.ucl.ac.be/lelec210x"
 
 dt = np.dtype(np.uint16).newbyteorder("<")
 
@@ -58,6 +62,10 @@ def main():
         "-p", "--port", help="Port for serial communication")
     argParser.add_argument(
         "-m", "--model", help="Classification pickle filename")
+    argParser.add_argument(
+        "--host", help="Contest host (\"local\" or \"contest\")")
+    argParser.add_argument(
+        "--key", help="Key to use for the contest board (local or remote)")
     args = argParser.parse_args()
     print("uart-reader launched...\n")
 
@@ -79,6 +87,20 @@ def main():
         with open(args.model, 'rb') as model_file:
             classifier: ClassifierMixin | GaussianProcessClassifier = pickle.load(
                 model_file)
+
+    if args.host == "local":
+        hostname = HOSTNAME_LOCAL
+    elif args.host == "contest":
+        hostname = HOSTNAME_CONTEST
+    else:
+        print("No host chosen, selecting local")
+        hostname = HOSTNAME_LOCAL
+
+    if args.key is None:
+        print("No key specified")
+        sys.exit(0)
+
+    key = args.key
 
     input_stream = reader(port=args.port)
 
@@ -105,6 +127,10 @@ def main():
             prediction = classifier.predict((melvec,))
             prediction_proba = classifier.predict_proba((melvec,))
             print(f"{str(prediction[0])} : {prediction_proba[0]}")
+
+            if args.host:
+                requests.post(f"{hostname}/lelec210x/leaderboard/submit/\
+                              {key}/{prediction}", timeout=1)
 
         # print(repr(melvec))
 
