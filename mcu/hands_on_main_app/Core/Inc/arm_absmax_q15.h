@@ -17,11 +17,6 @@
  * @param[out] pResult    maximum value returned here
  * @param[out] pIndex     index of maximum value returned here
  */
-  void arm_absmax_q15(
-  const q15_t * pSrc,
-        uint32_t blockSize,
-        q15_t * pResult,
-        uint32_t * pIndex);
-
+void arm_absmax_q15(const q15_t* pSrc, uint32_t blockSize, q15_t* pResult, uint32_t* pIndex);
 
 #endif /* INC_ARM_ABSMAX_Q15_H_ */
