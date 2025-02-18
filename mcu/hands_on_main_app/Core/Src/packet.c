@@ -7,6 +7,7 @@
 #include "config.h"
 #include "main.h"
 #include "utils.h"
+#include <string.h>
 
 const uint8_t AES_Key[16] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                              0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
@@ -20,7 +21,7 @@ void tag_cbc_mac(uint8_t* tag, const uint8_t* msg, size_t msg_len)
     uint8_t* state = (uint8_t*)statew;
     size_t i;
 
-    // TO DO : Complete the CBC-MAC_AES
+    // TODO : Complete the CBC-MAC_AES
 
     // Copy the result of CBC-MAC-AES to the tag.
     for (int j = 0; j < 16; j++)
@@ -38,8 +39,16 @@ int make_packet(uint8_t* packet, size_t payload_len, uint8_t sender_id, uint32_t
     // So is the tag
     memset(packet + payload_len + PACKET_HEADER_LENGTH, 0, PACKET_TAG_LENGTH);
 
-    // TO DO :  replace the two previous command by properly
-    //			setting the packet header with the following structure :
+    packet[0] = 0x00;                      // Reserved
+    packet[1] = sender_id;                 // Emitter ID
+    packet[2] = (payload_len >> 8) & 0xFF; // Payload length MSB
+    packet[3] = payload_len & 0xFF;        // Payload length LSB
+    packet[4] = (serial >> 24) & 0xFF;     // Packet serial MSB
+    packet[5] = (serial >> 16) & 0xFF;
+    packet[6] = (serial >> 8) & 0xFF;
+    packet[7] = serial & 0xFF;
+
+    // properly setting the packet header with the following structure :
     /***************************************************************************
      *    Field       	Length (bytes)      Encoding        Description
      ***************************************************************************
