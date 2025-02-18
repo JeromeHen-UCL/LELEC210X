@@ -19,7 +19,7 @@ def parse_packet(line: str) -> bytes:
     """Parse a line into a packet."""
     line = line.strip()
     if line.startswith(PRINT_PREFIX):
-        return bytes.fromhex(line[len(PRINT_PREFIX) :])
+        return bytes.fromhex(line[len(PRINT_PREFIX):])
     else:
         return None
 
@@ -43,7 +43,7 @@ def hex_to_bytes(ctx: click.Context, param: click.Parameter, value: str) -> byte
     "--output",
     default="-",
     type=click.File("w"),
-    help="Where to read the input stream. Default to '-', a.k.a. stdout.",
+    help="Where to read the input stream. Default to None, use '-' for stdout or path for a file.",
 )
 @click.option(
     "--serial-port",
@@ -92,7 +92,7 @@ def main(
     """
     Parse packets from the MCU and perform authentication.
     """
-    logger.debug(f"Unwrapping packets with auth. key: {auth_key.hex()}")
+    logger.debug("Unwrapping packets with auth. key: %s", auth_key.hex())
 
     how_to_kill = (
         "Use Ctrl-C (or Ctrl-D) to terminate.\nIf that does not work, execute `"
@@ -114,25 +114,25 @@ def main(
             ser.reset_input_buffer()
             ser.read_until(b"\n")
 
-            logger.debug(f"Reading packets from serial port: {serial_port}")
+            logger.debug("Reading packets from serial port: %s", serial_port)
             logger.info(how_to_kill)
 
             while True:
                 line = ser.read_until(b"\n").decode("ascii").strip()
-                packet = parse_packet(line)
-                if packet is not None:
-                    yield packet
+                parsed_packet = parse_packet(line)
+                if parsed_packet is not None:
+                    yield parsed_packet
 
     elif _input:  # Read from file-like
 
         def reader() -> Iterator[str]:
-            logger.debug(f"Reading packets from input: {_input!s}")
+            logger.debug("Reading packets from input: %s," f"{_input!s}")
             logger.info(how_to_kill)
 
             for line in _input:
-                packet = parse_packet(line)
-                if packet is not None:
-                    yield packet
+                parsed_packet = parse_packet(line)
+                if parsed_packet is not None:
+                    yield parsed_packet
 
     else:  # Read from zmq GNU Radio interface
 
@@ -145,7 +145,7 @@ def main(
 
             socket.connect(tcp_address)
 
-            logger.debug(f"Reading packets from TCP address: {tcp_address}")
+            logger.debug("Reading packets from TCP address: %s", tcp_address)
             logger.info(how_to_kill)
 
             while True:
@@ -156,11 +156,12 @@ def main(
     for msg in input_stream:
         try:
             sender, payload = unwrapper.unwrap_packet(msg)
-            logger.debug(f"From {sender}, received packet: {payload.hex()}")
-            output.write(PRINT_PREFIX + payload.hex() + "\n")
-            output.flush()
+            logger.debug("From %s, received packet: %s", sender, payload.hex())
+
+            if output:
+                logger.info("Writing packet payload to output.")
+                output.write(PRINT_PREFIX + payload.hex() + "\n")
+                output.flush()
 
         except packet.InvalidPacket as e:
-            logger.error(
-                f"Invalid packet error: {e.args[0]}",
-            )
+            logger.error("Invalid packet error: %s", str(e.args[0]))

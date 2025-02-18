@@ -15,6 +15,8 @@ from .utils import payload_to_melvecs
 
 load_dotenv()
 
+MELVEC_LENGTH = 20
+N_MELVECS = 20
 HOSTNAME_LOCAL = "http://localhost:5000"
 HOSTNAME_CONTEST = "http://lelec210x.sipr.ucl.ac.be/lelec210x"
 
@@ -91,19 +93,29 @@ def main(
         hostname = None
         key = None
 
+    if key == "":
+        logger.error("No key found, please set the key in the .env file")
+
     for packet in _input:
-        if PRINT_PREFIX in packet:
-            payload = packet[len(PRINT_PREFIX):]
+        if not PRINT_PREFIX in packet:
+            continue
 
-            melvecs = payload_to_melvecs(payload, melvec_length, n_melvecs)
-            logger.info("Parsed payload into Mel vectors: %s", melvecs)
+        payload = packet[len(PRINT_PREFIX):]
 
-            if model:
-                predictions = model.predict(melvecs)
-                prediction_proba = model.predict_proba(melvecs)
-                logger.debug("%s : %s ", str(predictions[0]), prediction_proba[0])
+        melvecs = payload_to_melvecs(payload, melvec_length, n_melvecs)
+        melvecs_flattened = melvecs.flatten().reshape(1, -1)
+        logger.debug("Parsed payload into Mel vectors: %s", melvecs)
+        logger.debug("\tflattened into: %s", melvecs_flattened)
 
-                if hostname:
-                    logger.debug("Submitting prediction %s to %s", predictions[0], hostname)
-                    requests.post(f"{hostname}/lelec210x/leaderboard/submit/\
-                                {key}/{predictions}", timeout=1)
+        if model:
+            predictions = model.predict(melvecs_flattened)
+            prediction_proba = model.predict_proba(melvecs_flattened)
+            logger.info("%s : %s ", str(predictions[0]), prediction_proba[0])
+
+            if hostname:
+                logger.info("Submitting prediction %s to %s", predictions[0], hostname)
+                try:
+                    requests.post(
+                        f"{hostname}/lelec210x/leaderboard/submit/{key}/{predictions[0]}", timeout=1)
+                except requests.exceptions.RequestException as e:
+                    logger.error("Failed to submit prediction: %s", e)
