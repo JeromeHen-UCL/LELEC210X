@@ -1,0 +1,5 @@
+# run local leaderboard with UART link
+rye run auth --serial-port /dev/ttyACM0 --no-authenticate -v WARNING | rye run classify --model classification/model.pickle --host local
+
+# run local leaderboard with GNU link
+rye run auth --no-authenticate -v WARNING | rye run classify --model classification/model.pickle --host local
