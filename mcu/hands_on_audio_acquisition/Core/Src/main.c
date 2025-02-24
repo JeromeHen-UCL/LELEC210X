@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "adc.h"
+#include "dma.h"
 #include "gpio.h"
+#include "tim.h"
 #include "usart.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -35,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_SIZE 256
+#define ADC_BUF_SIZE 8192
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -69,7 +72,21 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     if (GPIO_Pin == B1_Pin)
     {
         state = 1 - state;
+        printf("Btn pressed\r\n");
+        HAL_TIM_Base_Start(&htim3);
+        HAL_ADC_Start_DMA(&hadc1, (uint32_t*)ADCBuffer, ADC_BUF_SIZE);
     }
+}
+
+static void ADC_Callback()
+{
+    HAL_ADC_Stop_DMA(&hadc1);
+    print_buffer(ADCData1);
+}
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
+{
+    ADC_Callback(1);
 }
 
 void hex_encode(char* s, const uint8_t* buf, size_t len)
@@ -130,7 +147,10 @@ int main(void)
 
     /* Initialize all configured peripherals */
     MX_GPIO_Init();
+    MX_DMA_Init();
     MX_LPUART1_UART_Init();
+    MX_ADC1_Init();
+    MX_TIM3_Init();
     /* USER CODE BEGIN 2 */
     RetargetInit(&hlpuart1);
     printf("Hello world!\r\n");
@@ -143,6 +163,11 @@ int main(void)
     /* USER CODE BEGIN WHILE */
     while (1)
     {
+        //        HAL_ADC_Start(&hadc1);
+        //        HAL_ADC_PollForConversion(&hadc1, 0xFFFF);
+        //        HAL_ADC_GetValue(&hadc1);
+        //        HAL_ADC_Stop(&hadc1);
+
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
         HAL_Delay(500);
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
