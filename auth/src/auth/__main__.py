@@ -19,7 +19,10 @@ def parse_packet(line: str) -> bytes:
     """Parse a line into a packet."""
     line = line.strip()
     if line.startswith(PRINT_PREFIX):
-        return bytes.fromhex(line[len(PRINT_PREFIX):])
+        try:
+            return bytes.fromhex(line[len(PRINT_PREFIX):])
+        except ValueError as e:
+            logger.error("Could not parse packet: %s", str(e))
     else:
         return None
 
