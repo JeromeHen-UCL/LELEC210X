@@ -7,6 +7,9 @@ name = "LELEC210X"
 readme = "README.md"
 requires-python = "==3.9.*"
 version = "0.1.0"
+dependencies = [
+    "optuna>=4.2.1",
+]
 
 [tool.ruff]
 extend-exclude = ["**/doxygen/**/*.py"]

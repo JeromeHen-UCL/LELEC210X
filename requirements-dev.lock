@@ -14,6 +14,12 @@
 -e file:common
 -e file:contrib
 -e file:leaderboard
+<<<<<<< Updated upstream
+-e file:mcu
+=======
+alembic==1.15.1
+    # via optuna
+>>>>>>> Stashed changes
 aniso8601==9.0.1
     # via flask-restx
 anyio==4.4.0
@@ -27,6 +33,8 @@ argon2-cffi-bindings==21.2.0
     # via argon2-cffi
 arrow==1.3.0
     # via isoduration
+astroid==3.3.9
+    # via pylint
 asttokens==2.4.1
     # via stack-data
 async-lru==2.0.4
@@ -67,11 +75,14 @@ click==8.1.8
     # via contrib
     # via flask
     # via leaderboard
-colorama==0.4.6
-    # via click
-    # via ipython
-    # via pytest
-    # via tqdm
+<<<<<<< Updated upstream
+    # via mcu
+=======
+colorlog==6.9.0
+    # via optuna
+>>>>>>> Stashed changes
+colorlog==6.9.0
+    # via optuna
 comm==0.2.2
     # via ipykernel
 contourpy==1.2.1
@@ -89,6 +100,8 @@ defusedxml==0.7.1
     # via nbconvert
 deprecated==1.2.14
     # via limits
+dill==0.3.9
+    # via pylint
 distlib==0.3.8
     # via virtualenv
 dnspython==2.6.1
@@ -139,6 +152,7 @@ gevent-websocket==0.10.1
 greenlet==3.0.3
     # via eventlet
     # via gevent
+    # via sqlalchemy
 h11==0.14.0
     # via httpcore
     # via wsproto
@@ -173,6 +187,8 @@ ipython==8.18.1
     # via ipykernel
 isoduration==20.11.0
     # via jsonschema
+isort==6.0.1
+    # via pylint
 itsdangerous==2.2.0
     # via flask
     # via flask-wtf
@@ -239,12 +255,15 @@ limits==3.13.0
     # via flask-limiter
 llvmlite==0.43.0
     # via numba
+mako==1.3.9
+    # via alembic
 markdown==3.7
     # via leaderboard
 markdown-it-py==3.0.0
     # via rich
 markupsafe==2.1.5
     # via jinja2
+    # via mako
     # via nbconvert
     # via werkzeug
     # via wtforms
@@ -254,6 +273,8 @@ matplotlib==3.9.4
 matplotlib-inline==0.1.7
     # via ipykernel
     # via ipython
+mccabe==0.7.0
+    # via pylint
 mdurl==0.1.2
     # via markdown-it-py
 mistune==3.0.2
@@ -285,12 +306,14 @@ numpy==2.0.2
     # via librosa
     # via matplotlib
     # via numba
+    # via optuna
     # via pandas
     # via scikit-learn
     # via scipy
     # via seaborn
     # via soundfile
     # via soxr
+optuna==4.2.1
 ordered-set==4.1.0
     # via flask-limiter
 overrides==7.7.0
@@ -304,6 +327,11 @@ packaging==24.1
     # via limits
     # via matplotlib
     # via nbconvert
+<<<<<<< Updated upstream
+    # via plotly
+=======
+    # via optuna
+>>>>>>> Stashed changes
     # via pooch
     # via pytest
 pandas==2.2.2
@@ -317,6 +345,7 @@ pillow==10.4.0
 platformdirs==4.2.2
     # via jupyter-core
     # via pooch
+    # via pylint
     # via virtualenv
 pluggy==1.5.0
     # via pytest
@@ -341,6 +370,8 @@ pygments==2.18.0
     # via ipython
     # via nbconvert
     # via rich
+pylint==3.3.5
+    # via classification
 pyparsing==3.1.4
     # via matplotlib
 pyqt6==6.8.1
@@ -380,6 +411,7 @@ pywinpty==2.0.15
 pyyaml==6.0.2
     # via flask-swagger
     # via jupyter-events
+    # via optuna
     # via pre-commit
 pyzmq==26.2.0
     # via auth
@@ -444,6 +476,9 @@ soupsieve==2.6
     # via beautifulsoup4
 soxr==0.5.0
     # via librosa
+sqlalchemy==2.0.38
+    # via alembic
+    # via optuna
 stack-data==0.6.3
     # via ipython
 terminado==0.18.1
@@ -455,7 +490,10 @@ tinycss2==1.3.0
     # via nbconvert
 tomli==2.0.1
     # via jupyterlab
+    # via pylint
     # via pytest
+tomlkit==0.13.2
+    # via pylint
 tornado==6.4.1
     # via ipykernel
     # via jupyter-client
@@ -465,6 +503,7 @@ tornado==6.4.1
     # via terminado
 tqdm==4.66.5
     # via classification
+    # via optuna
 traitlets==5.14.3
     # via comm
     # via ipykernel
@@ -481,13 +520,20 @@ traitlets==5.14.3
 types-python-dateutil==2.9.0.20240821
     # via arrow
 typing-extensions==4.12.2
+    # via alembic
     # via anyio
+    # via astroid
     # via async-lru
     # via flask-limiter
     # via ipython
     # via librosa
     # via limits
     # via pydantic
+<<<<<<< Updated upstream
+=======
+    # via pylint
+    # via sqlalchemy
+>>>>>>> Stashed changes
 tzdata==2024.1
     # via pandas
     # via tzlocal
@@ -517,7 +563,11 @@ wsproto==1.2.0
     # via simple-websocket
 wtforms==3.1.2
     # via flask-wtf
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@673277e510ebd996b62a2fcc76169bf3cce29910
+<<<<<<< Updated upstream
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@711e72c292327674c4a0593fdbb83d6347738ec9
+=======
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@420d53387cff54ea1fccca061438d59bdb50a39c
+>>>>>>> Stashed changes
 zipp==3.20.1
     # via importlib-metadata
     # via importlib-resources
