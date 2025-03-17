@@ -4,6 +4,7 @@ import pickle
 from typing import Optional
 
 import click
+import numpy as np
 import requests
 
 from auth import PRINT_PREFIX
@@ -107,10 +108,23 @@ def main(
         logger.debug("Parsed payload into Mel vectors: %s", melvecs)
         logger.debug("\tflattened into: %s", melvecs_flattened)
 
-        if model:
-            predictions = model.predict(melvecs_flattened)
-            prediction_proba = model.predict_proba(melvecs_flattened)
-            logger.info("%s : %s ", str(predictions[0]), prediction_proba[0])
+        max_condition = np.max(melvecs_flattened) > 0.010
+        logger.info("Max is %s", np.max(melvecs_flattened))
+        if max_condition:
+            logger.info("Max trigerred")
+
+        norm_condition = np.linalg.norm(melvecs_flattened) > 0.010
+        logger.info("Norm is %s", np.linalg.norm(melvecs_flattened))
+        if norm_condition:
+            logger.info("Norm trigerred")
+
+        if model and (max_condition or norm_condition):
+            # predictions = model.predict(melvecs_flattened)
+            predictions = ["fireworks"]  # HACK: fixme later
+            # predictions_proba = model.predict_proba(melvecs_flattened)
+            predictions_proba = [1]  # HACK: fixme later
+
+            logger.info("%s : %s ", str(predictions[0]), predictions_proba[0])
 
             if hostname:
                 logger.info("Submitting prediction %s to %s", predictions[0], hostname)
