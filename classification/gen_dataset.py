@@ -211,14 +211,17 @@ def change_power(content: np.ndarray, reference_power: float, target_snr_db: flo
     Returns:
         np.ndarray: the original content scaled to correct power
     """
-    if target_snr_db == -np.inf:
-        return np.zeros_like(content)
+    if target_snr_db == -np.inf or not np.any(content):
+        return np.zeros_like(content)  # Ensure silent signals remain silent
 
-    content_power = np.mean(content ** 2) if np.any(content) else 1e-10
+    # Compute power of the content
+    content_power = np.mean(content ** 2)
 
-    # Compute scaling factor for background noise to achieve desired SNR
-    snr_linear = 10 ** (target_snr_db / 10)  # Convert SNR from dB to linear scale
-    scaling_factor = np.sqrt(reference_power / (snr_linear * content_power))
+    # Convert SNR from dB to linear scale
+    snr_linear = 10 ** (target_snr_db / 10)
+
+    # Compute scaling factor to achieve the target power
+    scaling_factor = np.sqrt(snr_linear * reference_power / content_power)
 
     return content * scaling_factor
 
@@ -320,15 +323,18 @@ def get_db_audios(args: argparse.Namespace,
     for i in range(int(background_frac * args.db_len)):
 
         delay_param = - np.random.randint(0, len(background) - SOUND_LEN + 1) / SOUND_FS
-        agwn_snr_param = np.random.choice(AWGN_SNR_PARAMS)
+        bg_snr_param = np.random.choice(BG_SNR_PARAMS)
+        awgn_snr_param = np.random.choice(AWGN_SNR_PARAMS)
+        pink_snr_param = np.random.choice(PINK_SNR_PARAMS)
 
         # generate a time shifted with noise
         if i % logging_period == 0 or i == args.db_len - 1:
-            logger.info("Processing (%2.0f%%)\t\tdelay=%.2f,\tnoise=%.2f",
-                        100 * (i + 1)/args.db_len, delay_param, agwn_snr_param)
+            logger.info("Processing (%2.0f%%)\t\tdelay=%.2f",
+                        100 * (i + 1)/args.db_len, delay_param)
 
         # TODO: have coherent values
-        db_audios[i] = gen_audio(background, background, delay_param, -np.inf, -np.inf, -np.inf)
+        db_audios[i] = gen_audio(background, background, delay_param,
+                                 bg_snr_param, awgn_snr_param, pink_snr_param)
         db_labels[i] = "background"
 
     # Add event audios
@@ -356,9 +362,8 @@ def get_db_audios(args: argparse.Namespace,
         pink_snr_param = np.random.choice(PINK_SNR_PARAMS)
 
         if i % logging_period == 0 or i == args.db_len - 1:
-            logger.info("Processing (%.0f%%)\t\tdelay=%.2f,\tnoise=%.2f,\techo=%.2f,\tSNR=%.2f",
-                        100 * (i + 1)/args.db_len, delay_param,
-                        agwn_snr_param, echo_param, bg_snr_param)
+            logger.info("Processing (%.0f%%)\t\tdelay=%.2f",
+                        100 * (i + 1)/args.db_len, delay_param)
 
         output_audio = gen_audio(input_audio, background, delay_param,
                                  bg_snr_param, agwn_snr_param, pink_snr_param)
@@ -398,7 +403,7 @@ def filter_audio(audio: np.ndarray, fir_coefficients: np.ndarray) -> np.ndarray:
 
 def get_mels(audio: np.ndarray) -> np.ndarray:
     """
-    Transform an audio in a melsmatrix representation.
+    Transform an audio in a (0;1) normalized melsmatrix representation.
 
     Args:
         audio (np.ndarray): the audio to modify
@@ -433,7 +438,7 @@ def get_mels(audio: np.ndarray) -> np.ndarray:
 
     melspec = hz2mel_mat[:, : MELS_NFFT // 2] @ stft
 
-    return melspec
+    return melspec / np.max(melspec)
 
 
 def main(args: argparse.Namespace) -> None:
