@@ -32,7 +32,7 @@ FREQ_SAMPLING = int(32e6/((15+1)*(195+1)))
 VAL_MAX_ADC = 4096
 
 N_REPETITIONS = 2
-N_FREQUENCIES = 15
+N_FREQUENCIES = 40
 
 # Via datasheet
 FREQ_START = 100
@@ -339,7 +339,7 @@ def main(args: argparse.Namespace) -> None:
     )
 
     fir_coefficients = sp.signal.firwin2(
-        300, np.linspace(0, FREQ_SAMPLING/2, 512) / (FREQ_SAMPLING/2), means_interp)
+        301, np.linspace(0, FREQ_SAMPLING/2, 512) / (FREQ_SAMPLING/2), means_interp)
     logger.info("FIR coefficients: %s", fir_coefficients)
 
     if args.plot_FIR:
