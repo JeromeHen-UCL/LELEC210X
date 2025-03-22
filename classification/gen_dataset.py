@@ -4,7 +4,7 @@ using data augmentation techniques like:
     - delay of the audio
     - varying the SNR (sound to background ratio)
     - adding white noise (white before filtering!)
-
+]
 Each augmentation possibility is performed in combination with the others. The output is saved in
 the `output_dir` directory as numpy ndarrays, with non scaled values being in mels (like the ones
 received from the MCU).
@@ -13,6 +13,9 @@ received from the MCU).
 
 # TODO:
 # - Implement noise from distribution of noise from Nucleo
+
+# FIXME: gunshot delay can add "nothing" to a sound and labeling it as "gunshot" instead of
+#   "background"
 
 
 import argparse
@@ -28,7 +31,7 @@ from scipy import signal as sg
 import soundfile as sf
 
 
-CLASSES = {"chainsaw", "fire", "fireworks", "gun"}
+CLASSES = {"chainsaw", "fire", "fireworks", "gunshot"}
 
 INPUT_AUDIO_DURATION = 5  # seconds
 SOUND_TARGET_DB = 50  # dB
@@ -49,12 +52,12 @@ AUG_BG_SNR_MIN = -25  # dB
 AUG_BG_SNR_MAX = -15  # dB
 AUG_BG_SNR_NUM = 20  # number of possible SNR levels to apply
 
-AUG_AWGN_SNR_MIN = -20  # dB
-AUG_AWGN_SNR_MAX = -5  # dB
-AUG_AWGN_SNR_NUM = 20   # number of pink noise SNR (relative to sample) values
+AUG_AWGN_SNR_MIN = -100  # dB
+AUG_AWGN_SNR_MAX = -100  # dB
+AUG_AWGN_SNR_NUM = 20   # number of AWGN noise SNR (relative to sample) values
 
-AUG_PINK_SNR_MIN = -30  # dB
-AUG_PINK_SNR_MAX = -10  # dB
+AUG_PINK_SNR_MIN = -5  # dB
+AUG_PINK_SNR_MAX = 5  # dB
 AUG_PINK_SNR_NUM = 20   # number of pink noise SNR (relative to sample) values
 
 AUG_ECHO_MIN = 0  # ?
@@ -187,7 +190,7 @@ def gen_pink_noise(length: int) -> np.ndarray:
     # Create 1/f filter (inverse frequency scaling)
     freqs = np.fft.rfftfreq(length)
     freqs[0] = 1  # Avoid division by zero
-    pink_filter = 1 / np.sqrt(freqs)
+    pink_filter = 1 / np.pow(freqs, 1.3)
 
     # Apply filter and transform back
     pink_spectrum = fft_spectrum * pink_filter
@@ -324,8 +327,8 @@ def get_db_audios(args: argparse.Namespace,
 
         delay_param = - np.random.randint(0, len(background) - SOUND_LEN + 1) / SOUND_FS
         bg_snr_param = np.random.choice(BG_SNR_PARAMS)
-        awgn_snr_param = np.random.choice(AWGN_SNR_PARAMS)
-        pink_snr_param = np.random.choice(PINK_SNR_PARAMS)
+        awgn_snr_param = np.random.choice(AWGN_SNR_PARAMS) - bg_snr_param
+        pink_snr_param = np.random.choice(PINK_SNR_PARAMS) - bg_snr_param
 
         # generate a time shifted with noise
         if i % logging_period == 0 or i == args.db_len - 1:
@@ -333,8 +336,8 @@ def get_db_audios(args: argparse.Namespace,
                         100 * (i + 1)/args.db_len, delay_param)
 
         # TODO: have coherent values
-        db_audios[i] = gen_audio(background, background, delay_param,
-                                 bg_snr_param, awgn_snr_param, pink_snr_param)
+        db_audios[i] = gen_audio(background, np.zeros_like(background), delay_param,
+                                 -np.inf, awgn_snr_param, pink_snr_param)
         db_labels[i] = "background"
 
     # Add event audios
@@ -469,6 +472,11 @@ def main(args: argparse.Namespace) -> None:
             logger.info("Filtering (%.0f%%)", 100 * (i + 1)/args.db_len)
 
         db_audios[i] = filter_audio(audio, fir_coefficients)
+
+        # import sounddevice as sd
+        # sd.play(db_audios[i], SOUND_FS)
+        # import time
+        # time.sleep(SOUND_DURATION)
 
     # [4] Transform into melvectors
     db_mels = np.empty((args.db_len, MELVECS_LEN * MELS_LEN))
