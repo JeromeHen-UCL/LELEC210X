@@ -362,7 +362,6 @@ pygments==2.19.1
     # via nbconvert
     # via rich
 pylint==3.3.6
-    # via classification
 pyparsing==3.2.1
     # via matplotlib
 pyqt6==6.8.1
@@ -544,7 +543,7 @@ wsproto==1.2.0
     # via simple-websocket
 wtforms==3.2.1
     # via flask-wtf
-youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@da7223d4aa42ff9fc680b0951d043dd03cec2d30
+youtube-dl @ git+https://github.com/ytdl-org/youtube-dl.git@4e714f9df1ed2cccd51df60d45ff5504abe827b7
 zipp==3.21.0
     # via importlib-metadata
     # via importlib-resources

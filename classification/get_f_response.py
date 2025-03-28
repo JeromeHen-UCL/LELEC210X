@@ -5,10 +5,6 @@ frequency response.
 """
 
 
-# TODO:
-# have the same fs for the sounds to convert and the recordings
-
-
 import argparse
 import glob
 import logging

@@ -124,7 +124,7 @@ def main(args: argparse.Namespace) -> None:
     cm_test = confusion_matrix(db_labels_test, y_pred_test, normalize="true")
     logger.info("Accuracy on synthetic data is %f", real_accuracy)
 
-    # TEST: visualize the synthetic melvecs
+    # Visualize the synthetic melvecs
     # for melvec, label in zip(db_mels_train, db_labels_train):
     #     plt.imshow(melvec.reshape(20, 20), cmap="jet", aspect="auto", extent=(0, 20, 20, 0))
     #     plt.gca().invert_yaxis()

@@ -341,7 +341,6 @@ pygments==2.19.1
     # via nbconvert
     # via rich
 pylint==3.3.6
-    # via classification
 pyparsing==3.2.1
     # via matplotlib
 pyserial==3.5

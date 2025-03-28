@@ -3,8 +3,8 @@ Generate the dataset for the classification task. Has the ability to generate ne
 using data augmentation techniques like:
     - delay of the audio
     - varying the SNR (sound to background ratio)
-    - adding white noise (white before filtering!)
-]
+    - adding white/pink noise (white/pink before filtering!)
+
 Each augmentation possibility is performed in combination with the others. The output is saved in
 the `output_dir` directory as numpy ndarrays, with non scaled values being in mels (like the ones
 received from the MCU).
@@ -287,7 +287,7 @@ def gen_audio(input_audio: np.ndarray,
 
     output_audio += change_power(pink, input_power, snr_pink_db)
 
-    return output_audio
+    return output_audio / np.max(output_audio)
 
 
 def get_db_audios(args: argparse.Namespace,
@@ -358,6 +358,7 @@ def get_db_audios(args: argparse.Namespace,
             logger.info("Processing (%.0f%%)\t\tdelay=%.2f",
                         100 * (i + 1)/args.db_len, delay_param)
 
+        # TODO: special case for gunshot when delay yields only background noise
         output_audio = gen_audio(input_audio, background, delay_param,
                                  bg_snr_param, agwn_snr_param, pink_snr_param)
 
@@ -460,11 +461,6 @@ def main(args: argparse.Namespace) -> None:
             logger.info("Filtering (%.0f%%)", 100 * (i + 1)/args.db_len)
 
         db_audios[i] = filter_audio(audio, fir_coefficients)
-
-        # import sounddevice as sd
-        # sd.play(db_audios[i], SOUND_FS)
-        # import time
-        # time.sleep(SOUND_DURATION)
 
     # [4] Transform into melvectors
     db_mels = np.empty((args.db_len, MELVECS_LEN * MELS_LEN))
