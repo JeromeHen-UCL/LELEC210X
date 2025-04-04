@@ -522,47 +522,123 @@ double device_handler::set_digital_filter(int device_number,
 unsigned
 device_handler::set_gain(int device_number, bool direction, int channel, unsigned gain_dB)
 {
-    if (gain_dB >= 0 && gain_dB <= 73) {
-        
-        std::cout << "INFO: device_handler::set_gain(): " << std::endl;
+    bool activateAGC = true; 
 
-        std::cout << "Clearing running sum before changing gain " << std::endl;
-        
-        uint32_t short_sum = get_dspcfg_short_sum(device_number);
-        uint32_t long_sum  = get_dspcfg_long_sum(device_number);
-        std::cout << "Actual : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
-        set_dspcfg_clear_rs(device_number, 1);
-        short_sum = get_dspcfg_short_sum(device_number);
-        long_sum  = get_dspcfg_long_sum(device_number);
-        std::cout << "Clear : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
+    if (activateAGC == true){
 
-        LMS_SetGaindB(device_handler::getInstance().get_device(device_number),
-                      direction,
-                      channel,
-                      gain_dB);
+        // std::cout << "agc activated1" << std::endl;
+        lms_device_t* device = device_handler::getInstance().get_device(device_number);
+        const uint16_t AGC_REG1 = 0x0408;
+        const uint16_t AGC_REG2 = 0x0409;
+        const uint16_t AGC_REG3 = 0x040A;
+        const uint16_t AGC_REG4 = 0x040C;//value set at 251 in the beginning 
+        //-->  1111 1011 --> so AGC BYP was at bypass .... to activate AGC, it should be 1011 1011 = 187
 
-        
-        std::string s_dir[2] = { "RX", "TX" };
+        const uint16_t AGC_K = 1024; // AGC_K[15:0]: AGC loop gain, LSB.
+        const uint16_t AGC_ADESIRED = 64; // AGC_ADESIRED[11:0]: Desired output signal level
+        const uint8_t AGC_MODE = 0; // AGC mode = 0 and RSSI = 1
+        const uint8_t AGC_AVG = 0; // AGC_AVG[2:0]: AGC averaging window size is 2(AGC_AVG + 7).
+
+        uint16_t AGC_REG1_content; 
+        uint16_t AGC_REG2_content; 
+        uint16_t AGC_REG3_content;
+        uint16_t AGC_REG4_content;
+    
+        AGC_REG1_content = AGC_K;
+        AGC_REG2_content = (AGC_ADESIRED << 4);
+        AGC_REG3_content = (AGC_MODE << 12) | (AGC_AVG);
+        AGC_REG4_content = 187; //1011 1011 = 187
+
+        LMS_WriteLMSReg(device, AGC_REG1, AGC_REG1_content);
+        LMS_WriteLMSReg(device, AGC_REG2, AGC_REG2_content);
+        LMS_WriteLMSReg(device, AGC_REG3, AGC_REG3_content);
+        LMS_WriteLMSReg(device, AGC_REG4, AGC_REG4_content);
+
+        uint16_t AGC_REG1_check; 
+        LMS_ReadLMSReg(device,AGC_REG1, &AGC_REG1_check);
+        uint16_t AGC_REG2_check; 
+        LMS_ReadLMSReg(device,AGC_REG2, &AGC_REG2_check);
+        uint16_t AGC_REG3_check; 
+        LMS_ReadLMSReg(device,AGC_REG3, &AGC_REG3_check);
+        uint16_t AGC_REG4_check; 
+        LMS_ReadLMSReg(device,AGC_REG4, &AGC_REG4_check);
+
+        std::cout << "AGC_REG1_content_check " << AGC_REG1_check << std::endl;
+        std::cout << "AGC_REG2_content_check " << AGC_REG2_check << std::endl;
+        std::cout << "AGC_REG3_content_check " << AGC_REG3_check << std::endl;
+        std::cout << "AGC_REG4_content_check " << AGC_REG4_check << std::endl;
+
+        unsigned int first_gain_value;
+        LMS_GetGaindB(device_handler::getInstance().get_device(device_number), direction, channel, &first_gain_value);
+        std::cout << "Gain " << first_gain_value << std::endl;
+
+        // std::cout << "agc activated3" << std::endl;
 
         unsigned int gain_value;
-        LMS_GetGaindB(device_handler::getInstance().get_device(device_number),
-                      direction,
-                      channel,
-                      &gain_value);
-        std::cout << "Set gain [" << s_dir[direction] << "] CH" << channel << ": "
-                  << gain_value << " dB." << std::endl;
-
-
-        set_dspcfg_clear_rs(device_number, 0);
-        short_sum = get_dspcfg_short_sum(device_number);
-        long_sum  = get_dspcfg_long_sum(device_number);
-        std::cout << "Running : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
+        // LMS_SetGaindB(device_handler::getInstance().get_device(device_number),direction,channel, 10);
+        LMS_GetGaindB(device_handler::getInstance().get_device(device_number), direction, channel, &gain_value);
+        // gain_value = 10;
+        // std::cout << "Gain " << gain_value << std::endl;
 
         return gain_value;
-    } else {
-        std::cout << "ERROR: device_handler::set_gain(): valid range [0, 73]"
-                  << std::endl;
-        close_all_devices();
+        }
+
+    else{
+        if (gain_dB >= 0 && gain_dB <= 73) {
+
+            lms_device_t* device = device_handler::getInstance().get_device(device_number);
+            const uint16_t AGC_REG1 = 0x0408;
+            const uint16_t AGC_REG2 = 0x0409;
+            const uint16_t AGC_REG3 = 0x040A;
+
+            uint16_t AGC_REG_default = 0;
+            uint16_t AGC_REG_default2 = 2;
+
+            LMS_WriteLMSReg(device, AGC_REG1, AGC_REG_default);
+            LMS_WriteLMSReg(device, AGC_REG2, AGC_REG_default);
+            LMS_WriteLMSReg(device, AGC_REG3, AGC_REG_default2<<12); 
+        
+        
+            std::cout << "INFO: device_handler::set_gain(): " << std::endl;
+    
+            std::cout << "Clearing running sum before changing gain " << std::endl;
+            
+            uint32_t short_sum = get_dspcfg_short_sum(device_number);
+            uint32_t long_sum  = get_dspcfg_long_sum(device_number);
+            std::cout << "Actual : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
+            set_dspcfg_clear_rs(device_number, 1);
+            short_sum = get_dspcfg_short_sum(device_number);
+            long_sum  = get_dspcfg_long_sum(device_number);
+            std::cout << "Clear : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
+    
+            LMS_SetGaindB(device_handler::getInstance().get_device(device_number),
+                          direction,
+                          channel,
+                          gain_dB);
+    
+            
+            std::string s_dir[2] = { "RX", "TX" };
+    
+            unsigned int gain_value;
+            LMS_GetGaindB(device_handler::getInstance().get_device(device_number),
+                          direction,
+                          channel,
+                          &gain_value);
+            std::cout << "Set gain [" << s_dir[direction] << "] CH" << channel << ": "
+                      << gain_value << " dB." << std::endl;
+    
+    
+            set_dspcfg_clear_rs(device_number, 0);
+            short_sum = get_dspcfg_short_sum(device_number);
+            long_sum  = get_dspcfg_long_sum(device_number);
+            std::cout << "Running : Short = " << short_sum << " /  Long = " << long_sum << std::endl;
+    
+            return gain_value;
+        } else {
+            std::cout << "ERROR: device_handler::set_gain(): valid range [0, 73]"
+                      << std::endl;
+            close_all_devices();
+        }
     }
 
     
