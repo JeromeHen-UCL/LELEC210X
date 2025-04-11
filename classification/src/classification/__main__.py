@@ -19,7 +19,7 @@ load_dotenv()
 MELVEC_LENGTH = 20
 N_MELVECS = 20
 HOSTNAME_LOCAL = "http://localhost:5000"
-HOSTNAME_CONTEST = "http://lelec210x.sipr.ucl.ac.be/lelec210x"
+HOSTNAME_CONTEST = "http://lelec210x.sipr.ucl.ac.be"
 
 
 @click.command()
@@ -105,24 +105,14 @@ def main(
 
         melvecs = payload_to_melvecs(payload, melvec_length, n_melvecs)
         melvecs_flattened = melvecs.flatten().reshape(1, -1)
+        melvecs_flattened /= np.max(melvecs_flattened)
+
         logger.debug("Parsed payload into Mel vectors: %s", melvecs)
         logger.debug("\tflattened into: %s", melvecs_flattened)
 
-        max_condition = np.max(melvecs_flattened) > 0.010
-        logger.info("Max is %s", np.max(melvecs_flattened))
-        if max_condition:
-            logger.info("Max trigerred")
-
-        norm_condition = np.linalg.norm(melvecs_flattened) > 0.010
-        logger.info("Norm is %s", np.linalg.norm(melvecs_flattened))
-        if norm_condition:
-            logger.info("Norm trigerred")
-
-        if model and (max_condition or norm_condition):
-            # predictions = model.predict(melvecs_flattened)
-            predictions = ["fireworks"]  # HACK: fixme later
-            # predictions_proba = model.predict_proba(melvecs_flattened)
-            predictions_proba = [1]  # HACK: fixme later
+        if model:
+            predictions = model.predict(melvecs_flattened)
+            predictions_proba = model.predict_proba(melvecs_flattened)
 
             logger.info("%s : %s ", str(predictions[0]), predictions_proba[0])
 
