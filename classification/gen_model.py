@@ -29,7 +29,7 @@ MELVECS_LEN = 20  # number of melvectors in a melspec
 
 CLASS_NAMES = ("background", "chainsaw", "fire", "fireworks", "gunshot")
 
-OBJ_SCORE_SYNTH_FRAC = .6
+OBJ_SCORE_SYNTH_FRAC = .2
 OBJ_SCORE_REAL_FRAC = 1 - OBJ_SCORE_SYNTH_FRAC
 OBJ_PCA_PENALTY = 0.1  # penalty for too many PCA components
 
@@ -149,7 +149,7 @@ def objective(
     """
 
     n_components = trial.suggest_int("n_components", 5, MELS_LEN * MELVECS_LEN)  # PCA components
-    n_neighbors = trial.suggest_int("n_neighbors", 10, 200)  # k-NN neighbors
+    n_neighbors = trial.suggest_int("n_neighbors", 1, 200)  # k-NN neighbors
 
     # Create pipeline
     pipeline = Pipeline([
@@ -248,13 +248,16 @@ def main(args: argparse.Namespace) -> None:
     logger.info("PCA: %d\tNeighbours: %d",
                 best_hyperparams["n_components"], best_hyperparams["n_neighbors"])
 
-    # TODO: save scaler and PCA components
+    # Save scaler and PCA components
     best_pipeline.fit(X_train, y_train)
-    best_model = KNeighborsClassifier(n_neighbors=best_hyperparams["n_neighbors"])
-    best_model.fit(X_train, y_train)
+    scaler = best_pipeline.steps[0][1]
+    best_pca = best_pipeline.steps[1][1]
+    best_model = best_pipeline.steps[2][1]
 
-    # TODO: change when PCA is on MCU
-    pickle.dump(best_pipeline, open("model.pickle", "wb"))
+    pickle.dump(best_pipeline, open("pipeline.pickle", "wb"))
+    pickle.dump(scaler, open("scaler.pickle", "wb"))
+    pickle.dump(best_pca, open("pca.pickle", "wb"))
+    pickle.dump(best_model, open("model.pickle", "wb"))
 
     # [4] Evaluate the model on synthetic data
     y_pred_test = best_pipeline.predict(db_mels_test)
@@ -286,7 +289,7 @@ def main(args: argparse.Namespace) -> None:
         show_cm(cm, label)
 
     # [7] Show specific melspecs
-    show_specifics(X_real, y_real, y_pred_test, SHOW_SPE_TRUE, SHOW_SPE_PRED)
+    # show_specifics(X_real, y_real, y_pred_test, SHOW_SPE_TRUE, SHOW_SPE_PRED)
 
 
 if __name__ == "__main__":
