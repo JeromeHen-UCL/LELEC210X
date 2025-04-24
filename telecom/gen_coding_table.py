@@ -113,12 +113,33 @@ def get_freq_table(payloads: np.ndarray, key_length: int) -> Tuple[np.ndarray, n
     all_chunks = chunks.reshape(-1, key_length)  # Flatten across all payloads
 
     # [3] Generate the coding table
-    # Convert each chunk to a fixed-size composite dtype for fast uniqueness lookup
+    # [3.1] Convert each chunk to a fixed-size composite dtype for fast uniqueness lookup
     key_dtype = np.dtype((np.void, key_length))  # Treat each row as a raw byte string
     chunk_keys = all_chunks.view(dtype=key_dtype).ravel()
 
     # Use np.unique for faster frequency counting
     unique_keys, counts = np.unique(chunk_keys, return_counts=True)
+
+    # [3.2] Check if every possible symbol at least present once
+    unique_keys_set = set(bytes(key) for key in unique_keys)
+    missing_symbols = []
+    missing_counts = []
+
+    for symbol in range(256**key_length):
+        symbol_bytes = symbol.to_bytes(key_length, byteorder='big')
+        if symbol_bytes not in unique_keys_set:
+            # print(f"Warning: Symbol {symbol} ({symbol_bytes.hex()}) not found in the payloads.")
+            missing_symbols.append(symbol_bytes)
+            missing_counts.append(0)  # Assign count 0 for missing symbol
+
+    if missing_symbols:
+        # Convert missing symbols to a NumPy array of the same type as unique_keys
+        missing_symbols_array = np.array(missing_symbols, dtype=unique_keys.dtype)
+        missing_counts_array = np.array(missing_counts, dtype=counts.dtype)
+
+        # Concatenate existing symbols with the missing symbols
+        unique_keys = np.concatenate([unique_keys, missing_symbols_array])
+        counts = np.concatenate([counts, missing_counts_array])
 
     # Reconstruct symbols as uint8 arrays from the unique void records
     symbols = np.frombuffer(b''.join(unique_keys.tolist()), dtype=np.uint8).reshape(-1, key_length)
@@ -170,6 +191,58 @@ def gen_huffman_table(symbols: np.ndarray, frequencies: np.ndarray) -> dict:
     return huffman_codes
 
 
+def save_huffman_table_to_h(
+        coding_table: dict[bytes, str],
+        key_length: int,
+        var_name="huffman_table"):
+    """
+    Export a Huffman table as a C const array.
+
+    Args:
+        coding_table (dict[bytes, str]): The Huffman coding table: symbol → bitstring
+        key_length (int): The number of bytes in each symbol
+        var_name (str): The variable name for the C array
+    """
+
+    header = f"""\
+#if !defined({var_name.upper()}_H)
+#define {var_name.upper()}_H
+
+#include <stdint.h>
+
+typedef struct
+{{
+    uint8_t symbol[{key_length}];
+    uint32_t codeword;
+    uint8_t bit_length;
+}} HuffmanEntry;
+
+const HuffmanEntry {var_name}[] = {{\n"""
+
+    body_lines = []
+    for symbol, bitstr in sorted(coding_table.items(), key=lambda x: x[0]):
+        # Convert symbol to comma-separated hex
+        symbol_hex = ', '.join(f'0x{b:02X}' for b in symbol)
+        codeword_int = int(bitstr, 2)
+        bit_length = len(bitstr)
+        line = f"    {{ {{ {symbol_hex} }}, 0x{codeword_int:X}, {bit_length} }},"
+        body_lines.append(line)
+
+    footer = f"""\
+}};
+
+#endif // {var_name.upper()}_H
+
+"""
+
+    # Combine everything
+    full_output = header + "\n".join(body_lines)[:-1] + "\n" + footer
+
+    # Write to .h
+    with open("coding_table.h", "w", encoding="utf-8") as f:
+        f.write(full_output)
+
+
 def main(args: argparse.Namespace) -> None:
     """
     Main function.
@@ -198,9 +271,15 @@ def main(args: argparse.Namespace) -> None:
         np.save(args.payloads, payloads)
 
     # [2] Generate the coding table
+    key_lengths = (1,)
+
     payload_gains = []
-    for key_length in range(1, 33):
+    for key_length in key_lengths:
         symbols, frequencies = get_freq_table(payloads, key_length)
+
+        # Testing
+        # symbols, frequencies = ("A", "B", "C"), (.5, .3, .2)
+
         coding_table = gen_huffman_table(symbols, frequencies)
 
         fixed_rate = 8 * key_length  # bits in non-compressed payload
@@ -217,6 +296,21 @@ def main(args: argparse.Namespace) -> None:
         print(f"\tFixed Rate:     {fixed_rate} bits/chunk")
         print(f"\tGain:           {gain:.3f} bits/chunk")
         print(f"\tPayload Gain:   {payload_gain:.3f} bits/payload")
+
+        # Plot the results
+        if args.plot:
+            plt.figure(figsize=(6, 4))
+            plt.plot(np.arange(len(frequencies)), frequencies, label="Chunks Distribution")
+            plt.title("Chunks Distribution")
+            plt.xlabel("Chunk Content")
+            plt.ylabel("Frequency")
+            plt.legend()
+            plt.show()
+
+    # [3] Save the coding table
+    save_huffman_table_to_h(coding_table, key_length)
+
+    np.save("coding_table.npy", coding_table)
 
 
 if __name__ == "__main__":
