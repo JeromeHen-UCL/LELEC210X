@@ -481,10 +481,10 @@ unsigned device_handler::set_gain(int device_number, bool direction, int channel
         const uint16_t AGC_REG4 = 0x040C; // value set at 251 in the beginning
         //-->  1111 1011 --> so AGC BYP was at bypass .... to activate AGC, it should be 1011 1011 = 187
 
-        const uint16_t AGC_K = 1300;       // AGC_K[15:0]: AGC loop gain, LSB.
-        const uint16_t AGC_ADESIRED = 512; // AGC_ADESIRED[11:0]: Desired output signal level
+        const uint16_t AGC_K = 1024;       // AGC_K[15:0]: AGC loop gain, LSB.
+        const uint16_t AGC_ADESIRED = 64; // AGC_ADESIRED[11:0]: Desired output signal level
         const uint8_t AGC_MODE = 0;        // AGC mode = 0 and RSSI = 1
-        const uint8_t AGC_AVG = 3;         // AGC_AVG[2:0]: AGC averaging window size is 2(AGC_AVG + 7).
+        const uint8_t AGC_AVG = 1;         // AGC_AVG[2:0]: AGC averaging window size is 2(AGC_AVG + 7).
 
         uint16_t AGC_REG1_content;
         uint16_t AGC_REG2_content;
