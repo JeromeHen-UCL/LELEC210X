@@ -11,10 +11,6 @@ received from the MCU).
 """
 
 
-# FIXME: gunshot delay can add "nothing" to a sound and labeling it as "gunshot" instead of
-#   "background"
-
-
 import argparse
 import glob
 import logging
@@ -26,11 +22,11 @@ import numpy as np
 from rich.logging import RichHandler
 from scipy import signal as sg
 import soundfile as sf
+import sounddevice as sd
 
 
 CLASSES = {"chainsaw", "fire", "fireworks", "gunshot"}
 
-INPUT_AUDIO_DURATION = 5  # seconds
 SOUND_TARGET_DB = 50  # dB
 
 MELS_NFFT = 512  # number of fft components in transform
@@ -41,25 +37,22 @@ SOUND_FS = 10200  # Hz
 SOUND_DURATION = MELS_NFFT * MELVECS_LEN / SOUND_FS  # seconds
 SOUND_LEN = int(SOUND_FS * SOUND_DURATION)
 
-AUG_DELAY_MIN_FRAC = -.8  # fraction of the sound length
-AUG_DELAY_MAX_FRAC = .1  # fraction of the sound length
-AUG_DELAY_NUM = 20  # number of possible delays to apply
+AUG_DELAY_MIN_OVERLAP = .2  # minimal fraction of the sound overlaping
+AUG_DELAY_NUM = 200  # number of possible delays to apply
 
 AUG_BG_SNR_MIN = -20  # dB
 AUG_BG_SNR_MAX = -15  # dB
-AUG_BG_SNR_NUM = 20  # number of possible SNR levels to apply
+AUG_BG_SNR_NUM = 200  # number of possible SNR levels to apply
 
 AUG_AWGN_SNR_MIN = -100  # dB
 AUG_AWGN_SNR_MAX = -100  # dB
-AUG_AWGN_SNR_NUM = 20   # number of AWGN noise SNR (relative to sample) values
+AUG_AWGN_SNR_NUM = 200   # number of AWGN noise SNR (relative to sample) values
 
-AUG_PINK_SNR_MIN = -5  # dB
-AUG_PINK_SNR_MAX = 10  # dB
-AUG_PINK_SNR_NUM = 20   # number of pink noise SNR (relative to sample) values
+AUG_PINK_ALPHA = 1.4  # pink noise filter exponent
+AUG_PINK_SNR_MIN = -15  # dB
+AUG_PINK_SNR_MAX = 0  # dB
+AUG_PINK_SNR_NUM = 200   # number of pink noise SNR (relative to sample) values
 
-DELAY_PARAMS = np.linspace(AUG_DELAY_MIN_FRAC * INPUT_AUDIO_DURATION,
-                           AUG_DELAY_MAX_FRAC * INPUT_AUDIO_DURATION,
-                           AUG_DELAY_NUM)
 AWGN_SNR_PARAMS = np.linspace(AUG_AWGN_SNR_MIN, AUG_AWGN_SNR_MAX, AUG_AWGN_SNR_NUM)
 BG_SNR_PARAMS = np.linspace(AUG_BG_SNR_MIN, AUG_BG_SNR_MAX, AUG_BG_SNR_NUM)
 PINK_SNR_PARAMS = np.linspace(AUG_PINK_SNR_MIN, AUG_PINK_SNR_MAX, AUG_PINK_SNR_NUM)
@@ -67,6 +60,25 @@ PINK_SNR_PARAMS = np.linspace(AUG_PINK_SNR_MIN, AUG_PINK_SNR_MAX, AUG_PINK_SNR_N
 
 logger: logging.Logger
 logging_period: float
+
+
+def get_delay_params(t: float, x: float) -> np.ndarray:
+    """
+    Get the delay parameters for the augmentation. The possible delays depend on the length of the
+    audio and the minimum overlap. The delays are uniformly distributed between the maximum delay
+    and the minimum overlap.
+
+    Args:
+        t (float): the length of the audio segment to shift
+        x (float): the length of the final audio
+
+    Returns:
+        np.ndarray: the possible delays to apply
+    """
+
+    return np.linspace(np.max((AUG_DELAY_MIN_OVERLAP*x - t, (AUG_DELAY_MIN_OVERLAP - 1) * t)),
+                       (1-AUG_DELAY_MIN_OVERLAP) * x,
+                       int(AUG_DELAY_NUM))
 
 
 def load_audios(args: argparse.Namespace) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -182,7 +194,7 @@ def gen_pink_noise(length: int) -> np.ndarray:
     # Create 1/f filter (inverse frequency scaling)
     freqs = np.fft.rfftfreq(length)
     freqs[0] = 1  # Avoid division by zero
-    pink_filter = 1 / np.pow(freqs, 1.4)
+    pink_filter = 1 / np.pow(freqs, AUG_PINK_ALPHA)
 
     # Apply filter and transform back
     pink_spectrum = fft_spectrum * pink_filter
@@ -349,7 +361,12 @@ def get_db_audios(args: argparse.Namespace,
         input_label = input_labels[index]
 
         # Choose augmentation args
-        delay_param = np.random.choice(DELAY_PARAMS)
+        # if input_label == "fireworks" or input_label == "gunshot":
+        #     # Make sure not to delay too much since the interesting part is at the beginning
+        #     delay_param = np.random.choice(np.linspace(
+        #         0, (1 - AUG_DELAY_MIN_OVERLAP) * SOUND_DURATION, AUG_DELAY_NUM))
+        # else:
+        delay_param = np.random.choice(get_delay_params(len(input_audio)/SOUND_FS, SOUND_DURATION))
         bg_snr_param = np.random.choice(BG_SNR_PARAMS)
         agwn_snr_param = np.random.choice(AWGN_SNR_PARAMS)
         pink_snr_param = np.random.choice(PINK_SNR_PARAMS)
@@ -358,7 +375,6 @@ def get_db_audios(args: argparse.Namespace,
             logger.info("Processing (%.0f%%)\t\tdelay=%.2f",
                         100 * (i + 1)/args.db_len, delay_param)
 
-        # TODO: special case for gunshot when delay yields only background noise
         output_audio = gen_audio(input_audio, background, delay_param,
                                  bg_snr_param, agwn_snr_param, pink_snr_param)
 
@@ -450,7 +466,7 @@ def main(args: argparse.Namespace) -> None:
 
     # [2] Perform data augmentations
     # Number of available parameter combinations
-    combinations_len = len(DELAY_PARAMS) * len(AWGN_SNR_PARAMS) * len(BG_SNR_PARAMS)
+    combinations_len = AUG_DELAY_NUM * AUG_AWGN_SNR_NUM * AUG_BG_SNR_NUM * AUG_PINK_SNR_NUM
     logger.info("Params have %d combinations", combinations_len)
 
     db_audios, db_labels = get_db_audios(args, input_audios, input_labels, background)
@@ -469,7 +485,9 @@ def main(args: argparse.Namespace) -> None:
             logger.info("Converting (%.0f%%)", 100 * (i + 1)/args.db_len)
 
         db_mels[i] = get_mels(audio).flatten()
-        if args.plot_mels:
+        if args.plot_mels and db_labels[i] != "background":
+            sd.play(db_audios[i], SOUND_FS)
+
             plt.imshow(db_mels[i].reshape(MELS_LEN, MELVECS_LEN), cmap="jet",
                        aspect="auto", extent=(0, MELVECS_LEN, MELS_LEN, 0))
             plt.gca().invert_yaxis()
