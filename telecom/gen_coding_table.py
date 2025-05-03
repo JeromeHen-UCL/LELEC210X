@@ -16,6 +16,9 @@ from matplotlib import pyplot as plt
 from sklearn.pipeline import Pipeline
 
 
+EPSILON = 1e-6  # Small value to avoid q15 conversion overflow
+
+
 def float_to_q15_bytes(float_values: list[float]) -> bytes:
     """
     Convert a list of floats to Q15 bytes.
@@ -27,19 +30,14 @@ def float_to_q15_bytes(float_values: list[float]) -> bytes:
         bytes: the converted values
     """
 
-    q15_vals = []
-    for f in float_values:
-        # Convert to Q15 integer
-        q15 = int(round(f * 2**15))
+    # Clip values to Q15 range [-1.0, 1.0 - EPSILON]
+    clipped = np.clip(float_values, -1.0, 1.0 - EPSILON)
 
-        # Clip to Q15 range
-        q15 = max(-2**15, min(2**15 - 1, q15))
+    # Scale and round to Q15 range
+    q15_vals = np.round(clipped * (2 ** 15 - 1)).astype(np.int16)
 
-        # Pack as signed 16-bit little-endian
-        q15_vals.append(q15)
-    # Pack into bytes
-
-    return b''.join(pack('>h', val) for val in q15_vals)  # '>h' = big endian signed short
+    # Convert to big-endian bytes
+    return q15_vals.astype('>i2').tobytes()
 
 
 def q15_bytes_to_floats(q15_values: bytes) -> list[float]:
@@ -56,6 +54,29 @@ def q15_bytes_to_floats(q15_values: bytes) -> list[float]:
     count = len(q15_values) // 2
     ints = unpack('>' + 'h' * count, q15_values)  # Big endian signed shorts
     return [i / 32768 for i in ints]
+
+
+def normalize_payload(payload: np.ndarray) -> Tuple[np.ndarray, float, float]:
+    """
+    Normalize a payload to the range [-1, 1].
+    This is done by subtracting the minimum value and dividing by the range (max - min).
+
+    Args:
+        payload (np.ndarray): the payload to normalize.
+
+    Returns:
+        Tuple[np.ndarray, float, float]: the normalized payload
+    """
+
+    min_val = payload.min()
+    max_val = payload.max()
+
+    if max_val == min_val:
+        return np.zeros_like(payload), 0.0, 1.0  # Avoid division by zero
+
+    scaled = 2 * (payload - min_val) / (max_val - min_val + EPSILON) - 1
+
+    return scaled, min_val, max_val
 
 
 def gen_payload(melspec: np.ndarray, pipeline: Pipeline) -> np.ndarray:
@@ -76,10 +97,20 @@ def gen_payload(melspec: np.ndarray, pipeline: Pipeline) -> np.ndarray:
     #   emitter_id      1               BE          Unique id of the sensor node.
     #   payload_length  2               BE          Length of app_data (in bytes).
     #   packet_serial   4               BE          Unique and incrementing id of the packet.
+    #   conv_addr       4               BE          Multiplicative factor to q15 conversion
     #   app_data        any                         The feature vectors.
     #   tag             16                          Message authentication code (MAC).
 
+    # melspec_transf is not from -1 to 1 (not included),
+    # and thus a transformation to q15 would overflows
     melspec_transf = pipeline.transform((melspec,))[0]
+
+    # Normalize the payload to Q15 range [-1, 1]
+    melspec_transf, _, _ = normalize_payload(melspec_transf)
+
+    assert np.all(melspec_transf < 1.0), "Some values still exceed 1.0!"
+    assert np.all(melspec_transf >= -1.0), "Some values are below -1.0!"
+
     payload = float_to_q15_bytes(melspec_transf)
 
     return payload
@@ -300,11 +331,14 @@ def main(args: argparse.Namespace) -> None:
         # Plot the results
         if args.plot:
             plt.figure(figsize=(6, 4))
-            plt.plot(np.arange(len(frequencies)), frequencies, label="Chunks Distribution")
+            plt.hist(np.arange(len(frequencies)), bins=len(frequencies) //
+                     2**2, weights=frequencies, label="Chunks Distribution")
             plt.title("Chunks Distribution")
             plt.xlabel("Chunk Content")
             plt.ylabel("Frequency")
             plt.legend()
+            plt.tight_layout()
+            plt.savefig(f"chunks_distribution_{key_length}.svg")
             plt.show()
 
     # [3] Save the coding table
