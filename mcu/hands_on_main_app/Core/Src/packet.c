@@ -3,6 +3,7 @@
  */
 
 #include "packet.h"
+#include "aes.h"
 #include "aes_ref.h"
 #include "config.h"
 #include "main.h"
@@ -22,6 +23,56 @@ void tag_cbc_mac(uint8_t* tag, const uint8_t* msg, size_t msg_len)
     size_t i;
 
     // TODO : Complete the CBC-MAC_AES
+    // SOFTWARE IMPLEMENTATION
+
+    /*uint8_t block[16] = {0};
+    // TO DO : Complete the CBC-MAC_AES
+    for (i = 0; i < ((int) (msg_len/16)); i++){
+        for(int j = 0; j < 16; j++) {
+            block[j] = state[j] ^ msg[i*16+j];
+        }
+
+        AES128_encrypt(block, AES_Key);
+
+        for(int j = 0; j < 16; j++) {
+            state[j] = block[j];
+        }
+    }
+
+    int rest = msg_len % 16;
+
+    if(rest) {
+        for(i = 0; i < rest; i++) {
+            block[i] = state[i] ^ msg[(int) (msg_len/16) * 16 + i];
+        }
+
+        for(i = rest; i < 16; i++) {
+            block[i] = state[i];
+        }
+
+        AES128_encrypt(block, AES_Key);
+
+        for(int j = 0; j < 16; j++) {
+            state[j] = block[j];
+        }
+    }*/
+
+    // HARDWARE IMPLEMENTATION
+    for (i = 0; i < msg_len - 16; i += 16)
+    {
+        for (size_t j = 0; j < 16; j++)
+        {
+            *(state + j) = msg[i + j] ^ *(state + j);
+        }
+        HAL_CRYP_AESCBC_Encrypt(&hcryp, state, 16, state, 1000);
+    }
+    // Prepare final block (zero-padded)
+    uint8_t final_block[16] = {0};
+    for (size_t k = i; k < msg_len; k++)
+    {
+        final_block[k - i] = msg[k] ^ state[k - i];
+    }
+    HAL_CRYP_AESCBC_Encrypt(&hcryp, final_block, 16, state, 1000);
 
     // Copy the result of CBC-MAC-AES to the tag.
     for (int j = 0; j < 16; j++)
@@ -55,9 +106,9 @@ int make_packet(uint8_t* packet, size_t payload_len, uint8_t sender_id, uint32_t
      *  r 					1 								Reserved, set to 0.
      * 	emitter_id 			1 					BE 			Unique id of the sensor node.
      *	payload_length 		2 					BE 			Length of app_data (in bytes).
-     *	packet_serial 		4 					BE 			Unique and incrementing id of the packet.
-     *	app_data 			any 							The feature vectors.
-     *	tag 				16 								Message authentication code (MAC).
+     *	packet_serial 		4 					BE 			Unique and incrementing id of the
+     *packet. app_data 			any 							The feature vectors. tag
+     *16 								Message authentication code (MAC).
      *
      *	Note : BE refers to Big endian
      *		 	Use the structure 	packet[x] = y; 	to set a byte of the packet buffer
@@ -69,7 +120,9 @@ int make_packet(uint8_t* packet, size_t payload_len, uint8_t sender_id, uint32_t
 
     // For the tag field, you have to calculate the tag. The function call below is correct but
     // tag_cbc_mac function, calculating the tag, is not implemented.
-    tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet, payload_len + PACKET_HEADER_LENGTH);
-
+    start_cycle_count();
+    tag_cbc_mac(packet + payload_len + PACKET_HEADER_LENGTH, packet,
+                payload_len + PACKET_HEADER_LENGTH);
+    stop_cycle_count("AES cycle count");
     return packet_len;
 }

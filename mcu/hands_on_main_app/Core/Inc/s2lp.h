@@ -5,8 +5,8 @@
 #ifndef INC_S2LP_H_
 #define INC_S2LP_H_
 
-#include <stdint.h>
 #include "stm32l4xx_hal.h"
+#include <stdint.h>
 
 // === Communication parameters
 #define BASE_FREQ 872000000  // Carrier frequency, in Hz
@@ -54,20 +54,22 @@ typedef enum
     CMD_READY = ((uint8_t)(0x62)),   /*!< Go to READY; valid only from STANDBY or SLEEP or LOCK */
     CMD_STANDBY = ((uint8_t)(0x63)), /*!< Go to STANDBY; valid only from READY */
     CMD_SLEEP = ((uint8_t)(0x64)),   /*!< Go to SLEEP; valid only from READY */
-    CMD_LOCKRX =
-        ((uint8_t)(0x65)), /*!< Go to LOCK state by using the RX configuration of the synth; valid only from READY */
-    CMD_LOCKTX =
-        ((uint8_t)(0x66)), /*!< Go to LOCK state by using the TX configuration of the synth; valid only from READY */
-    CMD_SABORT =
-        ((uint8_t)(0x67)), /*!< Force exit form TX or RX states and go to READY state; valid only from TX or RX */
-    CMD_LDC_RELOAD = ((uint8_t)(0x68)),  /*!< LDC Mode: Reload the LDC timer with the value stored in the  LDC_PRESCALER
-                                            / COUNTER  registers; valid from all states  */
+    CMD_LOCKRX = ((uint8_t)(0x65)),  /*!< Go to LOCK state by using the RX configuration of the
+                                        synth; valid only from READY */
+    CMD_LOCKTX = ((uint8_t)(0x66)),  /*!< Go to LOCK state by using the TX configuration of the
+                                        synth; valid only from READY */
+    CMD_SABORT = ((uint8_t)(0x67)),  /*!< Force exit form TX or RX states and go to READY state;
+                                        valid only from TX or RX */
+    CMD_LDC_RELOAD =
+        ((uint8_t)(0x68)), /*!< LDC Mode: Reload the LDC timer with the value stored in the
+                              LDC_PRESCALER / COUNTER  registers; valid from all states  */
     CMD_RCO_CALIB = ((uint8_t)(0x69)),   /*!< Start (or re-start) the RCO calibration */
     CMD_SRES = ((uint8_t)(0x70)),        /*!< Reset of all digital part, except SPI registers */
     CMD_FLUSHRXFIFO = ((uint8_t)(0x71)), /*!< Clean the RX FIFO; valid from all states */
     CMD_FLUSHTXFIFO = ((uint8_t)(0x72)), /*!< Clean the TX FIFO; valid from all states */
-    CMD_SEQUENCE_UPDATE = ((uint8_t)(0x73)), /*!< Autoretransmission: Reload the Packet sequence counter with the value
-                                                stored in the PROTOCOL[2] register valid from all states */
+    CMD_SEQUENCE_UPDATE =
+        ((uint8_t)(0x73)), /*!< Autoretransmission: Reload the Packet sequence counter with the
+                              value stored in the PROTOCOL[2] register valid from all states */
 } _S2LP_CMD;
 
 typedef enum

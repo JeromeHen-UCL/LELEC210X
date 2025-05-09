@@ -24,12 +24,13 @@ void Spectrogram_Format(q15_t* buf)
     //            Complexity: O(N)
     //            Number of cycles: <TODO>
 
-    // The output of the ADC is stored in an unsigned 12-bit format, so buf[i] is in [0 , 2**12 - 1]
-    // In order to better use the scale of the signed 16-bit format (1 bit of sign and 15 integer bits), we can multiply
-    // by 2**(15-12) = 2**3 That way, the value of buf[i] is in [0 , 2**15 - 1]
+    // The output of the ADC is stored in an unsigned 12-bit format, so buf[i] is in [0 , 2**12 -
+    // 1] In order to better use the scale of the signed 16-bit format (1 bit of sign and 15
+    // integer bits), we can multiply by 2**(15-12) = 2**3 That way, the value of buf[i] is in [0 ,
+    // 2**15 - 1]
 
-    // /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM instructions to do so
-    // are more efficient. Here we should shift left by 3.
+    // /!\ When multiplying/dividing by a power 2, always prefer shifting left/right instead, ARM
+    // instructions to do so are more efficient. Here we should shift left by 3.
 
     arm_shift_q15(buf, 3, buf, SAMPLES_PER_MELVEC);
 
@@ -38,8 +39,8 @@ void Spectrogram_Format(q15_t* buf)
     //            Complexity: O(N)
     //            Number of cycles: <TODO>
 
-    // Since we use a signed representation, we should now center the value around zero, we can do this by substracting
-    // 2**14. Now the value of buf[i] is in [-2**14 , 2**14 - 1]
+    // Since we use a signed representation, we should now center the value around zero, we can do
+    // this by substracting 2**14. Now the value of buf[i] is in [-2**14 , 2**14 - 1]
 
     for (uint16_t i = 0; i < SAMPLES_PER_MELVEC; i++)
     { // Remove DC component
@@ -58,12 +59,11 @@ void Spectrogram_Compute(q15_t* samples, q15_t* melvec)
 
     // STEP 2  : Discrete Fourier Transform
     //           --> In-place Fast Fourier Transform (FFT) on a real signal
-    //           --> For our spectrogram, we only keep only positive frequencies (symmetry) in the next operations.
-    //           Complexity: O(Nlog(N))
-    //           Number of cycles: <TODO>
+    //           --> For our spectrogram, we only keep only positive frequencies (symmetry) in the
+    //           next operations. Complexity: O(Nlog(N)) Number of cycles: <TODO>
 
-    // Since the FFT is a recursive algorithm, the values are rescaled in the function to ensure that overflow cannot
-    // happen.
+    // Since the FFT is a recursive algorithm, the values are rescaled in the function to ensure
+    // that overflow cannot happen.
     arm_rfft_instance_q15 rfft_inst;
 
     arm_rfft_init_q15(&rfft_inst, SAMPLES_PER_MELVEC, 0, 1);
@@ -72,9 +72,9 @@ void Spectrogram_Compute(q15_t* samples, q15_t* melvec)
 
     // STEP 3  : Compute the complex magnitude of the FFT
     //           Because the FFT can output a great proportion of very small values,
-    //           we should rescale all values by their maximum to avoid loss of precision when computing the complex
-    //           magnitude In this implementation, we use integer division and multiplication to rescale values, which
-    //           are very costly.
+    //           we should rescale all values by their maximum to avoid loss of precision when
+    //           computing the complex magnitude In this implementation, we use integer division
+    //           and multiplication to rescale values, which are very costly.
 
     // STEP 3.1: Find the extremum value (maximum of absolute values)
     //           Complexity: O(N)
@@ -89,7 +89,8 @@ void Spectrogram_Compute(q15_t* samples, q15_t* melvec)
     //           Complexity: O(N)
     //           Number of cycles: <TODO>
 
-    for (int i = 0; i < SAMPLES_PER_MELVEC; i++) // We don't use the second half of the symmetric spectrum
+    for (int i = 0; i < SAMPLES_PER_MELVEC;
+         i++) // We don't use the second half of the symmetric spectrum
     {
         buf[i] = (q15_t)(((q31_t)buf_fft[i] << 15) / ((q31_t)vmax));
     }
@@ -115,15 +116,17 @@ void Spectrogram_Compute(q15_t* samples, q15_t* melvec)
     //           Complexity: O(Nmel*N)
     //           Number of cycles: <TODO>
 
-    // /!\ The difference between the function arm_mat_mult_q15() and the fast variant is that the fast variant use a
-    // 32-bit rather than a 64-bit accumulator. The result of each 1.15 x 1.15 multiplication is truncated to 2.30
-    // format. These intermediate results are accumulated in a 32-bit register in 2.30 format. Finally, the accumulator
-    // is saturated and converted to a 1.15 result. The fast version has the same overflow behavior as the standard
-    // version but provides less precision since it discards the low 16 bits of each multiplication result.
+    // /!\ The difference between the function arm_mat_mult_q15() and the fast variant is that the
+    // fast variant use a 32-bit rather than a 64-bit accumulator. The result of each 1.15 x 1.15
+    // multiplication is truncated to 2.30 format. These intermediate results are accumulated in a
+    // 32-bit register in 2.30 format. Finally, the accumulator is saturated and converted to
+    // a 1.15 result. The fast version has the same overflow behavior as the standard version but
+    // provides less precision since it discards the low 16 bits of each multiplication result.
 
-    // /!\ In order to avoid overflows completely the input signals should be scaled down. Scale down one of the input
-    // matrices by log2(numColsA) bits to avoid overflows, as a total of numColsA additions are computed internally for
-    // each output element. Because our hz2mel_mat matrix contains lots of zeros in its rows, this is not necessary.
+    // /!\ In order to avoid overflows completely the input signals should be scaled down. Scale
+    // down one of the input matrices by log2(numColsA) bits to avoid overflows, as a total of
+    // numColsA additions are computed internally for each output element. Because our hz2mel_mat
+    // matrix contains lots of zeros in its rows, this is not necessary.
 
     arm_matrix_instance_q15 hz2mel_inst, fftmag_inst, melvec_inst;
 

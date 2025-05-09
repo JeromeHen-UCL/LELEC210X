@@ -38,7 +38,7 @@ extern "C"
  */
 #define HAL_MODULE_ENABLED
 #define HAL_ADC_MODULE_ENABLED
-/*#define HAL_CRYP_MODULE_ENABLED   */
+#define HAL_CRYP_MODULE_ENABLED
 /*#define HAL_CAN_MODULE_ENABLED   */
 /*#define HAL_COMP_MODULE_ENABLED   */
 /*#define HAL_I2C_MODULE_ENABLED   */
@@ -112,8 +112,8 @@ extern "C"
  *        This value is the default MSI range value after Reset.
  */
 #if !defined(MSI_VALUE)
-#define MSI_VALUE ((uint32_t)48000000U) /*!< Value of the Internal oscillator in Hz*/
-#endif                                  /* MSI_VALUE */
+#define MSI_VALUE ((uint32_t)2000000U) /*!< Value of the Internal oscillator in Hz*/
+#endif                                 /* MSI_VALUE */
 /**
  * @brief Internal High Speed oscillator (HSI) value.
  *        This value is used by the RCC HAL module to compute the system frequency
@@ -131,9 +131,10 @@ extern "C"
  *        which is subject to manufacturing process variations.
  */
 #if !defined(HSI48_VALUE)
-#define HSI48_VALUE                                                                                                    \
-    ((uint32_t)48000000U) /*!< Value of the Internal High Speed oscillator for USB FS/SDMMC/RNG in Hz.                 \
-                           The real value my vary depending on manufacturing process variations.*/
+#define HSI48_VALUE                                                                               \
+    ((uint32_t)48000000U) /*!< Value of the Internal High Speed oscillator for USB FS/SDMMC/RNG   \
+                           in Hz. The real value my vary depending on manufacturing process                                        \
+                           variations.*/
 #endif                    /* HSI48_VALUE */
 
 /**
@@ -141,8 +142,8 @@ extern "C"
  */
 #if !defined(LSI_VALUE)
 #define LSI_VALUE 32000U /*!< LSI Typical Value in Hz*/
-#endif /* LSI_VALUE */   /*!< Value of the Internal Low Speed oscillator in Hz                                         \
-                          The real value may vary depending on the variations                                          \
+#endif /* LSI_VALUE */   /*!< Value of the Internal Low Speed oscillator in Hz                    \
+                          The real value may vary depending on the variations                     \
                           in voltage and temperature.*/
 
 /**

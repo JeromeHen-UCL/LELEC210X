@@ -7,7 +7,7 @@
 #include "utils.h"
 #include <adc_dblbuf.h>
 
-static volatile uint16_t ADCDoubleBuf[2 * ADC_BUF_SIZE]; /* ADC group regular conversion data (array of data) */
+static volatile uint16_t ADCDoubleBuf[2 * ADC_BUF_SIZE];
 static volatile uint16_t* ADCData[2] = {&ADCDoubleBuf[0], &ADCDoubleBuf[ADC_BUF_SIZE]};
 static volatile uint8_t ADCDataRdy[2] = {0, 0};
 
@@ -77,7 +77,8 @@ static void encode_packet(uint8_t* packet, uint32_t* packet_cnt)
         for (size_t j = 0; j < MELVEC_LENGTH; j++)
         {
             (packet + PACKET_HEADER_LENGTH)[(i * MELVEC_LENGTH + j) * 2] = mel_vectors[i][j] >> 8;
-            (packet + PACKET_HEADER_LENGTH)[(i * MELVEC_LENGTH + j) * 2 + 1] = mel_vectors[i][j] & 0xFF;
+            (packet + PACKET_HEADER_LENGTH)[(i * MELVEC_LENGTH + j) * 2 + 1] =
+                mel_vectors[i][j] & 0xFF;
         }
     }
     // Write header and tag into the packet.

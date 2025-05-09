@@ -78,7 +78,8 @@ HAL_StatusTypeDef S2LP_WriteTxFIFO(uint8_t* chunk, uint8_t chunk_len, S2LPStatus
 
     __disable_irq();
     HAL_GPIO_WritePin(RADIO_S2LP_CSN_GPIO_Port, RADIO_S2LP_CSN_Pin, GPIO_PIN_RESET);
-    HAL_StatusTypeDef err = HAL_SPI_TransmitReceive(gSPI, TxBuf, RxBuf, chunk_len + 2, HAL_MAX_DELAY);
+    HAL_StatusTypeDef err =
+        HAL_SPI_TransmitReceive(gSPI, TxBuf, RxBuf, chunk_len + 2, HAL_MAX_DELAY);
     HAL_GPIO_WritePin(RADIO_S2LP_CSN_GPIO_Port, RADIO_S2LP_CSN_Pin, GPIO_PIN_SET);
     __enable_irq();
 
@@ -145,7 +146,7 @@ HAL_StatusTypeDef S2LP_Send(uint8_t* payload, uint16_t pay_len)
         while (free_chunks == 0)
         {
             if (!sending)
-            {                                        // if FIFO is full and we are not sending yet ...
+            { // if FIFO is full and we are not sending yet ...
                 S2LP_Command(CMD_TX, &radio_status); // start the transmission
                 sending = 1;
             }
@@ -158,7 +159,8 @@ HAL_StatusTypeDef S2LP_Send(uint8_t* payload, uint16_t pay_len)
             }
         }
 
-        uint8_t chunk_len = (i == n_chunks - 1) ? pay_len - (n_chunks - 1) * FIFO_CHUNK_SIZE : FIFO_CHUNK_SIZE;
+        uint8_t chunk_len =
+            (i == n_chunks - 1) ? pay_len - (n_chunks - 1) * FIFO_CHUNK_SIZE : FIFO_CHUNK_SIZE;
         err = S2LP_WriteTxFIFO(&payload[i * FIFO_CHUNK_SIZE], chunk_len, &radio_status);
         if (err)
         {
@@ -221,9 +223,10 @@ void S2LP_PrintStatus(S2LPStatus* status)
         break;
     }
     DEBUG_PRINT("\r\n");
-    DEBUG_PRINT("  XO_ON=%u, ERROR_LOCK=%u, RX_fifo_empty=%u, TX_FIFO_FULL=%u\r\n", status->XO_ON, status->ERROR_LOCK,
-                status->RX_FIFO_EMPTY, status->TX_FIFO_FULL);
-    DEBUG_PRINT("  ANT_SELECT=%u, RCCAL_OK=%u, RES=%u\r\n", status->ANT_SELECT, status->RCCAL_OK, status->RESERVED);
+    DEBUG_PRINT("  XO_ON=%u, ERROR_LOCK=%u, RX_fifo_empty=%u, TX_FIFO_FULL=%u\r\n", status->XO_ON,
+                status->ERROR_LOCK, status->RX_FIFO_EMPTY, status->TX_FIFO_FULL);
+    DEBUG_PRINT("  ANT_SELECT=%u, RCCAL_OK=%u, RES=%u\r\n", status->ANT_SELECT, status->RCCAL_OK,
+                status->RESERVED);
 }
 
 /**
@@ -454,7 +457,8 @@ HAL_StatusTypeDef S2LP_Sleep(void)
     S2LPStatus radio_status;
     HAL_StatusTypeDef err = S2LP_ReadReg(0, NULL, &radio_status); // fetch radio state
 
-    while (radio_status.MC_STATE != MC_STATE_SLEEP && radio_status.MC_STATE != MC_STATE_SLEEP_NOFIFO)
+    while (radio_status.MC_STATE != MC_STATE_SLEEP &&
+           radio_status.MC_STATE != MC_STATE_SLEEP_NOFIFO)
     {
         err = S2LP_Command(CMD_SLEEP, &radio_status);
         if (err)
@@ -492,13 +496,13 @@ HAL_StatusTypeDef S2LP_Init(SPI_HandleTypeDef* spi_handle)
 
     __disable_irq();
     HAL_GPIO_WritePin(RADIO_SDN_GPIO_Port, RADIO_SDN_Pin, GPIO_PIN_RESET); // Power up S2LP
-    for (uint32_t i = 0; i < ncycles_start; i++)                           // Wait for S2LP to start
+    for (uint32_t i = 0; i < ncycles_start; i++) // Wait for S2LP to start
         asm volatile("nop");
     __enable_irq();
 
     S2LP_WriteReg(GPIO0_CONF_ADDR, 3, NULL); // Set GPIO as interrupt line
     S2LP_WriteReg(IRQ_MASK0_ADDR, 0x80 | 0x20 | 0x04,
-                  NULL);                       // Enable "Tx Data sent" and "TX FIFO almost full" interrupts
+                  NULL); // Enable "Tx Data sent" and "TX FIFO almost full" interrupts
     S2LP_WriteReg(IRQ_MASK1_ADDR, 0x01, NULL); // Enable "TX FIFO almost empty" interrupt
     S2LP_WriteReg(IRQ_MASK2_ADDR, 0x00, NULL);
     S2LP_WriteReg(IRQ_MASK3_ADDR, 0x00, NULL);
@@ -521,14 +525,16 @@ HAL_StatusTypeDef S2LP_Init(SPI_HandleTypeDef* spi_handle)
 
     S2LPStatus radio_status;
     uint8_t rco_conf;
-    HAL_StatusTypeDef err = S2LP_ReadReg(XO_RCO_CONF1_ADDR, &rco_conf, &radio_status); // fetch radio state
+    HAL_StatusTypeDef err =
+        S2LP_ReadReg(XO_RCO_CONF1_ADDR, &rco_conf, &radio_status); // fetch radio state
     if (err)
     {
         return err;
     }
     else if (rco_conf != 0x45)
     {
-        DEBUG_PRINT("[S2LP] Error: XO_RCO_CONF1 register is invalid (0x%X instead of 0x45), faulty SPI bus?\r\n",
+        DEBUG_PRINT("[S2LP] Error: XO_RCO_CONF1 register is invalid (0x%X instead of 0x45), "
+                    "faulty SPI bus?\r\n",
                     rco_conf);
         return HAL_ERROR;
     }
