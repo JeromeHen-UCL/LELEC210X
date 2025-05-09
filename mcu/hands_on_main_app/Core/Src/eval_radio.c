@@ -28,7 +28,8 @@ void eval_radio(void)
         }
 
         S2LP_SetPALeveldBm(lvl);
-        DEBUG_PRINT("=== Configured PA level to %ld dBm, sending %d packets at this level\r\n", lvl, N_PACKETS);
+        DEBUG_PRINT("=== Configured PA level to %ld dBm, sending %d packets at this level\r\n",
+                    lvl, N_PACKETS);
 
         for (uint16_t i = 0; i < N_PACKETS; i++)
         {

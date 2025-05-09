@@ -45,7 +45,8 @@
  * Default value: 0x0A
  * 7:3 GPIO_SELECT: Specify the GPIO0 I/O signal, default setting POR.
  * 2 RESERVED: -
- * 1:0 GPIO_MODE: GPIO0 Mode:,  01b: Digital Input,  10b: Digital Output Low Power,  11b: Digital Output High Power
+ * 1:0 GPIO_MODE: GPIO0 Mode:,  01b: Digital Input,  10b: Digital Output Low Power,  11b: Digital
+ * Output High Power
  * \endcode
  */
 #define GPIO0_CONF_ADDR ((uint8_t)0x00)
@@ -60,7 +61,8 @@
  * Default value: 0xA2
  * 7:3 GPIO_SELECT: Specify the GPIO1 I/O signal, default setting digital GND.
  * 2 RESERVED: -
- * 1:0 GPIO_MODE: GPIO1 Mode:,  01b: Digital Input1,  0b: Digital Output Low Power,  11b: Digital Output High Power
+ * 1:0 GPIO_MODE: GPIO1 Mode:,  01b: Digital Input1,  0b: Digital Output Low Power,  11b: Digital
+ * Output High Power
  * \endcode
  */
 #define GPIO1_CONF_ADDR ((uint8_t)0x01)
@@ -75,7 +77,8 @@
  * Default value: 0xA2
  * 7:3 GPIO_SELECT: Specify the GPIO2 I/O signal, default setting digital GND.
  * 2 RESERVED: -
- * 1:0 GPIO_MODE: GPIO2 Mode:,  01b: Digital Input,  10b: Digital Output Low Power,  11b: Digital Output High Power
+ * 1:0 GPIO_MODE: GPIO2 Mode:,  01b: Digital Input,  10b: Digital Output Low Power,  11b: Digital
+ * Output High Power
  * \endcode
  */
 #define GPIO2_CONF_ADDR ((uint8_t)0x02)
@@ -90,8 +93,8 @@
  * Default value: 0xA2
  * 7:3 GPIO_SELECT: Specify the GPIO3 I/O signal, default setting digital GND.
  * 2 RESERVED: -
- * 1:0 GPIO_MODE: GPIO3 Mode:,  00b: Analog,  01b: Digital Input,  10b: Digital Output Low Power,  11b: Digital Output
- * High Power
+ * 1:0 GPIO_MODE: GPIO3 Mode:,  00b: Analog,  01b: Digital Input,  10b: Digital Output Low Power,
+ * 11b: Digital Output High Power
  * \endcode
  */
 #define GPIO3_CONF_ADDR ((uint8_t)0x03)
@@ -104,10 +107,11 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7 EN_MCU_CLK: 1: The internal divider logic is running, so the MCU clock is available (but proper GPIO configuration
- * is needed) 6:5 CLOCK_TAIL: Number of extra clock cycles provided to the MCU before switching to STANDBY state.,  00b:
- * 0 extra clock cycle,  01b: 64 extra clock cycles,  10b: 256 extra clock cycles,  11b: 512 extra clock cycles 4:1
- * XO_RATIO: Divider for the XO clock output 0 RCO_RATIO: Divider for the RCO clock output,  0: 1 , 1: 1/128
+ * 7 EN_MCU_CLK: 1: The internal divider logic is running, so the MCU clock is available (but
+ * proper GPIO configuration is needed) 6:5 CLOCK_TAIL: Number of extra clock cycles provided to
+ * the MCU before switching to STANDBY state.,  00b: 0 extra clock cycle,  01b: 64 extra clock
+ * cycles,  10b: 256 extra clock cycles,  11b: 512 extra clock cycles 4:1 XO_RATIO: Divider for the
+ * XO clock output 0 RCO_RATIO: Divider for the RCO clock output,  0: 1 , 1: 1/128
  * \endcode
  */
 #define MCU_CK_CONF_ADDR ((uint8_t)0x04)
@@ -123,9 +127,9 @@
  * Read and Write
  * Default value: 0x42
  * 7:5 PLL_CP_ISEL: Set the charge pump current according to the XTAL frequency.
- * 4 BS: Synthesizer band select. This parameter selects the out-of loop divide factor of the synthesizer:,  0: 4, band
- * select factor for high band,  1: 8, band select factor for middle band. 3:0 SYNT_27_24: MSB bits of the PLL
- * programmable divider.
+ * 4 BS: Synthesizer band select. This parameter selects the out-of loop divide factor of the
+ * synthesizer:,  0: 4, band select factor for high band,  1: 8, band select factor for middle
+ * band. 3:0 SYNT_27_24: MSB bits of the PLL programmable divider.
  * \endcode
  */
 #define SYNT3_ADDR ((uint8_t)0x05)
@@ -175,7 +179,8 @@
  * \code
  * Read and Write
  * Default value: 0x2A
- * 7:0 IF_OFFSET_ANA: Intermediate frequency setting for the analog RF synthesizer, default: 300 kHz.
+ * 7:0 IF_OFFSET_ANA: Intermediate frequency setting for the analog RF synthesizer, default: 300
+ * kHz.
  * \endcode
  */
 #define IF_OFFSET_ANA_ADDR ((uint8_t)0x09)
@@ -187,7 +192,8 @@
  * \code
  * Read and Write
  * Default value: 0xB8
- * 7:0 IF_OFFSET_DIG: Intermediate frequency setting for the digital shift-to-baseband circuits, default: 300 kHz.
+ * 7:0 IF_OFFSET_DIG: Intermediate frequency setting for the digital shift-to-baseband circuits,
+ * default: 300 kHz.
  * \endcode
  */
 #define IF_OFFSET_DIG_ADDR ((uint8_t)0x0A)
@@ -211,8 +217,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 CH_NUM: Channel number. This value is multiplied by the channel spacing and added to the synthesizer base
- * frequency to generate the actual RF carrier frequency.
+ * 7:0 CH_NUM: Channel number. This value is multiplied by the channel spacing and added to the
+ * synthesizer base frequency to generate the actual RF carrier frequency.
  * \endcode
  */
 #define CHNUM_ADDR ((uint8_t)0x0D)
@@ -224,7 +230,8 @@
  * \code
  * Read and Write
  * Default value: 0x83
- * 7:0 DATARATE_M[15:8]: The MSB of the mantissa value of the data rate equation, default 38.4 ksps.
+ * 7:0 DATARATE_M[15:8]: The MSB of the mantissa value of the data rate equation, default 38.4
+ * ksps.
  * \endcode
  */
 #define MOD4_ADDR ((uint8_t)0x0E)
@@ -248,9 +255,9 @@
  * \code
  * Read and Write
  * Default value: 0x77
- * 7:4 MOD_TYPE: Modulation type:,  0: 2-FSK,  1: 4-FSK,  2: 2-GFSK BT=1,  3: 4-GFSK BT=1,  5: ASK/OOK,  7: unmodulated,
- * 10: 2-GFSK BT=0.5,  12: 4-GFSK BT=0.5 3:0 DATARATE_E: The exponent value of the data rate equation, default 38.4
- * ksps.
+ * 7:4 MOD_TYPE: Modulation type:,  0: 2-FSK,  1: 4-FSK,  2: 2-GFSK BT=1,  3: 4-GFSK BT=1,  5:
+ * ASK/OOK,  7: unmodulated, 10: 2-GFSK BT=0.5,  12: 4-GFSK BT=0.5 3:0 DATARATE_E: The exponent
+ * value of the data rate equation, default 38.4 ksps.
  * \endcode
  */
 #define MOD2_ADDR ((uint8_t)0x10)
@@ -309,8 +316,8 @@
  * Default value: 0xC8
  * 7 AFC_FREEZE_ON_SYNC: 1: enable the freeze AFC correction upon sync word detection.
  * 6 AFC_ENABLED: 1: enable the AFC correction.
- * 5 AFC_MODE: Select AFC mode:,  0: AFC loop closed on slicer,  1: AFC loop closed on second conversion stage.
- * 4:0 RESERVED: -
+ * 5 AFC_MODE: Select AFC mode:,  0: AFC loop closed on slicer,  1: AFC loop closed on second
+ * conversion stage. 4:0 RESERVED: -
  * \endcode
  */
 #define AFC2_ADDR ((uint8_t)0x14)
@@ -351,8 +358,9 @@
  * Read and Write
  * Default value: 0xE3
  * 7:4 RSSI_FLT: Gain of the RSSI filter.
- * 3:2 CS_MODE: Carrier sense mode:,  00b: Static CS,  01b: Dynamic CS with 6dB dynamic threshold,  10b: Dynamic CS with
- * 12dB dynamic threshold,  11b: Dynamic CS with 18dB dynamic threshold. 1:0 RESERVED: -
+ * 3:2 CS_MODE: Carrier sense mode:,  00b: Static CS,  01b: Dynamic CS with 6dB dynamic threshold,
+ * 10b: Dynamic CS with 12dB dynamic threshold,  11b: Dynamic CS with 18dB dynamic threshold. 1:0
+ * RESERVED: -
  * \endcode
  */
 #define RSSI_FLT_ADDR ((uint8_t)0x17)
@@ -378,9 +386,10 @@
  * Read and Write
  * Default value: 0x45
  * 7 RESERVED: -
- * 6:5 EQU_CTRL: ISI cancellation equalizer:,  00: equalization disabled,  01: single pass equalization,  10: dual pass
- * equalization. 4 CS_BLANKING: Do not fill the RX FIFO with data if the CS is above threhold. 3 AS_ENABLE: 1: enable
- * the antenna switching. 2:0 AS_MEAS_TIME: Set the measurement time.
+ * 6:5 EQU_CTRL: ISI cancellation equalizer:,  00: equalization disabled,  01: single pass
+ * equalization,  10: dual pass equalization. 4 CS_BLANKING: Do not fill the RX FIFO with data if
+ * the CS is above threhold. 3 AS_ENABLE: 1: enable the antenna switching. 2:0 AS_MEAS_TIME: Set
+ * the measurement time.
  * \endcode
  */
 #define ANT_SELECT_CONF_ADDR ((uint8_t)0x1F)
@@ -495,8 +504,8 @@
  * 3 INT_EN_4G: 1: enable the interleaving of 802.15.4g packet.
  * 2 MBUS_3OF6_EN: 1: enable the 3-out-of-6 encoding/decoding.
  * 1 MANCHESTER_EN: 1: enable the Manchester encoding/decoding.
- * 0 FIX_VAR_LEN: Packet length mode:,  0: fixed,  1: variable (in variable mode the field LEN_WID of PCKTCTRL3 register
- * must be configured)
+ * 0 FIX_VAR_LEN: Packet length mode:,  0: fixed,  1: variable (in variable mode the field LEN_WID
+ * of PCKTCTRL3 register must be configured)
  * \endcode
  */
 #define PCKTCTRL2_ADDR ((uint8_t)0x2F)
@@ -513,11 +522,12 @@
  * \code
  * Read and Write
  * Default value: 0x2C
- * 7:5 CRC_MODE: CRC field:,  0: no CRC field,  1: CRC using poly 0x07,  2: CRC using poly 0x8005,  3: CRC using poly
- * 0x1021,  4: CRC using poly 0x864CBF 4 WHIT_EN: 1: enable the whitening mode. 3:2 TXSOURCE: Tx source data:,  0:
- * normal mode,  1: direct through FIFO,  2: direct through GPIO,  3: PN9 1 SECOND_SYNC_SEL: In TX mode: 0 select the
- * primary SYNC word, 1 select the secondary SYNC word., In RX mode: enable the dual SYNC word detection mode. 0 FEC_EN:
- * 1: enable the FEC encoding in TX or the Viterbi decoding in RX.
+ * 7:5 CRC_MODE: CRC field:,  0: no CRC field,  1: CRC using poly 0x07,  2: CRC using poly 0x8005,
+ * 3: CRC using poly 0x1021,  4: CRC using poly 0x864CBF 4 WHIT_EN: 1: enable the whitening mode.
+ * 3:2 TXSOURCE: Tx source data:,  0: normal mode,  1: direct through FIFO,  2: direct through
+ * GPIO,  3: PN9 1 SECOND_SYNC_SEL: In TX mode: 0 select the primary SYNC word, 1 select the
+ * secondary SYNC word., In RX mode: enable the dual SYNC word detection mode. 0 FEC_EN: 1: enable
+ * the FEC encoding in TX or the Viterbi decoding in RX.
  * \endcode
  */
 #define PCKTCTRL1_ADDR ((uint8_t)0x30)
@@ -636,9 +646,10 @@
  * 7 CS_TIMEOUT_MASK: 1: enable the CS value contributes to timeout disabling.
  * 6 SQI_TIMEOUT_MASK: 1: enable the SQI value contributes to timeout disabling.
  * 5 PQI_TIMEOUT_MASK: 1: enable the PQI value contributes to timeout disabling.
- * 4:3 TX_SEQ_NUM_RELOAD: TX sequence number to be used when counting reset is required using the related command.
- * 2 FIFO_GPIO_OUT_MUX_SEL: 1: select the almost empty/full control for TX FIFO., 0: select the almost empty/full
- * control for RX FIFO. 1:0 LDC_TIMER_MULT: Set the LDC timer multiplier factor: 00b: x1, 01b: x2, 10b: x4, 11b: x8.
+ * 4:3 TX_SEQ_NUM_RELOAD: TX sequence number to be used when counting reset is required using the
+ * related command. 2 FIFO_GPIO_OUT_MUX_SEL: 1: select the almost empty/full control for TX FIFO.,
+ * 0: select the almost empty/full control for RX FIFO. 1:0 LDC_TIMER_MULT: Set the LDC timer
+ * multiplier factor: 00b: x1, 01b: x2, 10b: x4, 11b: x8.
  * \endcode
  */
 #define PROTOCOL2_ADDR ((uint8_t)0x39)
@@ -659,9 +670,10 @@
  * 6 LDC_RELOAD_ON_SYNC: 1: enable the LDC timer reload mode.
  * 5 PIGGYBACKING: 1: enable the piggybacking.
  * 4 FAST_CS_TERM_EN: 1: enable the RX sniff timer.
- * 3 SEED_RELOAD: 1: enable the reload of the back-off random generator seed using the value written in the
- * BU_COUNTER_SEED. 2 CSMA_ON: 1 enable the CSMA channel access mode. 1 CSMA_PERS_ON: 1: enable the CSMA persistent mode
- * (no backoff cycles). 0 AUTO_PCKT_FLT: 1: enable the automatic packet filtering control.
+ * 3 SEED_RELOAD: 1: enable the reload of the back-off random generator seed using the value
+ * written in the BU_COUNTER_SEED. 2 CSMA_ON: 1 enable the CSMA channel access mode. 1
+ * CSMA_PERS_ON: 1: enable the CSMA persistent mode (no backoff cycles). 0 AUTO_PCKT_FLT: 1: enable
+ * the automatic packet filtering control.
  * \endcode
  */
 #define PROTOCOL1_ADDR ((uint8_t)0x3A)
@@ -754,11 +766,12 @@
  * 7 RESERVED: -
  * 6 RX_TIMEOUT_AND_OR_SEL: Logical boolean function applied to CS/SQI/PQI values: 1: OR, 0: AND.
  * 5 RESERVED: -
- * 4 SOURCE_ADDR_FLT: 1: RX packet accepted if its source field matches with RX_SOURCE_ADDR register
- * 3 DEST_VS_BROADCAST_ADDR: 1: RX packet accepted if its source field matches with BROADCAST_ADDR register.
- * 2 DEST_VS_MULTICAST_ADDR: 1: RX packet accepted if its destination address matches with MULTICAST_ADDR register.
- * 1 DEST_VS_SOURCE_ADDR: 1: RX packet accepted if its destination address matches with RX_SOURCE_ADDR register.
- * 0 CRC_FLT: 1: packet discarded if CRC is not valid.
+ * 4 SOURCE_ADDR_FLT: 1: RX packet accepted if its source field matches with RX_SOURCE_ADDR
+ * register 3 DEST_VS_BROADCAST_ADDR: 1: RX packet accepted if its source field matches with
+ * BROADCAST_ADDR register. 2 DEST_VS_MULTICAST_ADDR: 1: RX packet accepted if its destination
+ * address matches with MULTICAST_ADDR register. 1 DEST_VS_SOURCE_ADDR: 1: RX packet accepted if
+ * its destination address matches with RX_SOURCE_ADDR register. 0 CRC_FLT: 1: packet discarded if
+ * CRC is not valid.
  * \endcode
  */
 #define PCKT_FLT_OPTIONS_ADDR ((uint8_t)0x40)
@@ -775,8 +788,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 RX_SOURCE_MASK/DUAL_SYNC3: If dual sync mode enabled: dual SYNC word byte 3., Otherwise mask register for source
- * affress filtering.
+ * 7:0 RX_SOURCE_MASK/DUAL_SYNC3: If dual sync mode enabled: dual SYNC word byte 3., Otherwise mask
+ * register for source affress filtering.
  * \endcode
  */
 #define PCKT_FLT_GOALS4_ADDR ((uint8_t)0x41)
@@ -788,8 +801,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 RX_SOURCE_ADDR/DUAL_SYNC2: If dual sync mode enabled: dual SYNC word byte 2., Otherwise RX packet source or TX
- * packet destination field.
+ * 7:0 RX_SOURCE_ADDR/DUAL_SYNC2: If dual sync mode enabled: dual SYNC word byte 2., Otherwise RX
+ * packet source or TX packet destination field.
  * \endcode
  */
 #define PCKT_FLT_GOALS3_ADDR ((uint8_t)0x42)
@@ -801,7 +814,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 BROADCAST_ADDR/DUAL_SYNC1: If dual sync mode enabled: dual SYNC word byte 1., Broadcast address.
+ * 7:0 BROADCAST_ADDR/DUAL_SYNC1: If dual sync mode enabled: dual SYNC word byte 1., Broadcast
+ * address.
  * \endcode
  */
 #define PCKT_FLT_GOALS2_ADDR ((uint8_t)0x43)
@@ -813,7 +827,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 MULTICAST_ADDR/DUAL_SYNC0: If dual sync mode enabled: dual SYNC word byte 0., Multicast address.
+ * 7:0 MULTICAST_ADDR/DUAL_SYNC0: If dual sync mode enabled: dual SYNC word byte 0., Multicast
+ * address.
  * \endcode
  */
 #define PCKT_FLT_GOALS1_ADDR ((uint8_t)0x44)
@@ -909,7 +924,8 @@
  * \code
  * Read and Write
  * Default value: 0x4C
- * 7:0 BU_CNTR_SEED[14:8]: MSB part of the seed for the random generator used to apply the CSMA algorithm.
+ * 7:0 BU_CNTR_SEED[14:8]: MSB part of the seed for the random generator used to apply the CSMA
+ * algorithm.
  * \endcode
  */
 #define CSMA_CONF3_ADDR ((uint8_t)0x4C)
@@ -921,7 +937,8 @@
  * \code
  * Read and Write
  * Default value: 0x00
- * 7:0 BU_CNTR_SEED[7:0]: LSB part of the seed for the random generator used to apply the CSMA algorithm.
+ * 7:0 BU_CNTR_SEED[7:0]: LSB part of the seed for the random generator used to apply the CSMA
+ * algorithm.
  * \endcode
  */
 #define CSMA_CONF2_ADDR ((uint8_t)0x4D)
@@ -1127,11 +1144,10 @@
  * \code
  * Read and Write
  * Default value: 0x47
- * 7 DIG_SMOOTH_EN: 1: enable the generation of the internal signal TX_DATA which is the input of the FIR.
- * 6 PA_MAXDBM: 1: configure the PA to send maximum output power.
- * 5 PA_RAMP_EN: 1: enable the power ramping
- * 4:3 PA_RAMP_STEP_LEN: Set the step width (unit: 1/8 of bit period).
- * 2:0 PA_LEVEL_MAX_IDX: Final level for power ramping or selected output power index.
+ * 7 DIG_SMOOTH_EN: 1: enable the generation of the internal signal TX_DATA which is the input of
+ * the FIR. 6 PA_MAXDBM: 1: configure the PA to send maximum output power. 5 PA_RAMP_EN: 1: enable
+ * the power ramping 4:3 PA_RAMP_STEP_LEN: Set the step width (unit: 1/8 of bit period). 2:0
+ * PA_LEVEL_MAX_IDX: Final level for power ramping or selected output power index.
  * \endcode
  */
 #define PA_POWER0_ADDR ((uint8_t)0x62)
@@ -1183,10 +1199,9 @@
  * Read and Write
  * Default value: 0x02
  * 7:6 RESERVED: -
- * 5 VCO_CALAMP_EXT_SEL: 1 --> VCO amplitude calibration will be skipped (external amplitude word forced on VCO).
- * 4 VCO_CALFREQ_EXT_SEL: 1 --> VCO frequency calibration will be skipped (external amplitude word forced on VCO).
- * 3 RESERVED: -
- * 2:0 RESERVED: -
+ * 5 VCO_CALAMP_EXT_SEL: 1 --> VCO amplitude calibration will be skipped (external amplitude word
+ * forced on VCO). 4 VCO_CALFREQ_EXT_SEL: 1 --> VCO frequency calibration will be skipped (external
+ * amplitude word forced on VCO). 3 RESERVED: - 2:0 RESERVED: -
  * \endcode
  */
 #define VCO_CONFIG_ADDR ((uint8_t)0x68)
@@ -1199,9 +1214,9 @@
  * \code
  * Read and Write
  * Default value: 0x88
- * 7:4 VCO_CALAMP_TX: VCO magnitude calibration word (binary coding to be internally converted in thermometric code)
- * used in TX. 3:0 VCO_CALAMP_RX: VCO magnitude calibration word (binary coding to be internally converted in
- * thermometric code) used in RX.
+ * 7:4 VCO_CALAMP_TX: VCO magnitude calibration word (binary coding to be internally converted in
+ * thermometric code) used in TX. 3:0 VCO_CALAMP_RX: VCO magnitude calibration word (binary coding
+ * to be internally converted in thermometric code) used in RX.
  * \endcode
  */
 #define VCO_CALIBR_IN2_ADDR ((uint8_t)0x69)
@@ -1242,9 +1257,8 @@
  * Default value: 0x6C
  * 7:6 RESERVED: -
  * 5 RESERVED: -
- * 4 PD_CLKDIV: 1: disable both dividers of digital clock (and reference clockfor the SMPS) and IF-ADC clock.
- * 3:2 RESERVED: -
- * 1:0 RESERVED: -
+ * 4 PD_CLKDIV: 1: disable both dividers of digital clock (and reference clockfor the SMPS) and
+ * IF-ADC clock. 3:2 RESERVED: - 1:0 RESERVED: -
  * \endcode
  */
 #define XO_RCO_CONF1_ADDR ((uint8_t)0x6C)
@@ -1327,9 +1341,9 @@
  * \code
  * Read and Write
  * Default value: 0x20
- * 7 KRM_EN: 0: divider by 4 enabled (SMPS' switching frequency is FSW=FCLK/4), 1: rate multiplier enabled (SMPS'
- * switching frequency is FSW=KRM*FOSC/(2^15). 6:0 KRM_14_8: Sets the divider ratio (MSB) of the rate multiplier
- * (default: FSW=FCLK/4)
+ * 7 KRM_EN: 0: divider by 4 enabled (SMPS' switching frequency is FSW=FCLK/4), 1: rate multiplier
+ * enabled (SMPS' switching frequency is FSW=KRM*FOSC/(2^15). 6:0 KRM_14_8: Sets the divider ratio
+ * (MSB) of the rate multiplier (default: FSW=FCLK/4)
  * \endcode
  */
 #define PM_CONF3_ADDR ((uint8_t)0x76)
@@ -1374,10 +1388,11 @@
  * Read and Write
  * Default value: 0x42
  * 7 RESERVED: -
- * 6:4 SET_SMPS_LVL: 000: SMPS output voltage 1.1 V, 001: SMPS output voltage 1.2 V, 010: SMPS output voltage 1.3 V,
- * 011: SMPS output voltage 1.4 V, 100: SMPS output voltage 1.5 V, 101: SMPS output voltage 1.6 V, 110: SMPS output
- * voltage 1.7 V, 111: SMPS output voltage 1.8 V. 3:2 RESERVED: - 1 RESERVED: - 0 SLEEP_MODE_SEL: 0: SLEEP without FIFO
- * retention; 1: SLEEP with FIFO retention.
+ * 6:4 SET_SMPS_LVL: 000: SMPS output voltage 1.1 V, 001: SMPS output voltage 1.2 V, 010: SMPS
+ * output voltage 1.3 V, 011: SMPS output voltage 1.4 V, 100: SMPS output voltage 1.5 V, 101: SMPS
+ * output voltage 1.6 V, 110: SMPS output voltage 1.7 V, 111: SMPS output voltage 1.8 V. 3:2
+ * RESERVED: - 1 RESERVED: - 0 SLEEP_MODE_SEL: 0: SLEEP without FIFO retention; 1: SLEEP with FIFO
+ * retention.
  * \endcode
  */
 #define PM_CONF0_ADDR ((uint8_t)0x79)
@@ -1479,8 +1494,8 @@
  * Read only
  * Default value: 0x00
  * 7:4 RESERVED: -
- * 3:0 VCO_CAL_AMP_OUT: VCO magnitude calibration output word (binary coding internally converted from thermometric
- * coding).
+ * 3:0 VCO_CAL_AMP_OUT: VCO magnitude calibration output word (binary coding internally converted
+ * from thermometric coding).
  * \endcode
  */
 #define VCO_CALIBR_OUT1_ADDR ((uint8_t)0x99)
@@ -1493,8 +1508,8 @@
  * Read only
  * Default value: 0x00
  * 7 RESERVED: -
- * 6:0 VCO_CAL_FREQ_OUT: VCO Cbank frequency calibration output word (binary coding internally converted from
- * thermometric coding).
+ * 6:0 VCO_CAL_FREQ_OUT: VCO Cbank frequency calibration output word (binary coding internally
+ * converted from thermometric coding).
  * \endcode
  */
 #define VCO_CALIBR_OUT0_ADDR ((uint8_t)0x9A)
@@ -1574,7 +1589,8 @@
  * \code
  * Read only
  * Default value: 0x00
- * 7:0 RSSI_LEVEL: RSSI level captured at the end of the SYNC word detection of the received packet.
+ * 7:0 RSSI_LEVEL: RSSI level captured at the end of the SYNC word detection of the received
+ * packet.
  * \endcode
  */
 #define RSSI_LEVEL_ADDR ((uint8_t)0xA2)
@@ -1682,7 +1698,8 @@
  * \code
  * Read only
  * Default value: 0x00
- * 7:0 RSSI_LEVEL_RUN: RSSI level of the received packet, which supports continuos fast SPI reading.
+ * 7:0 RSSI_LEVEL_RUN: RSSI level of the received packet, which supports continuos fast SPI
+ * reading.
  * \endcode
  */
 #define RSSI_LEVEL_RUN_ADDR ((uint8_t)0xEF)
