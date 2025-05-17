@@ -114,7 +114,8 @@ def main(args: argparse.Namespace) -> None:
     final_signal, gains, means = agc_transform(
         initial_signal, k=k, avg=avg, a_desired=a_desired)
 
-    plt.figure(figsize=(10, 5))
+    plt.figure(figsize=(6, 4))
+    # plt.figure(figsize=(4, 3))
     plt.plot(t, final_signal, color="blue", label="final_signal", alpha=1)
     plt.plot(t, initial_signal, color="green", label="initial_signal", alpha=1)
     plt.axhline(y=a_desired, color="red", linestyle="--", linewidth=1)
