@@ -332,12 +332,16 @@ def main(args: argparse.Namespace) -> None:
         if args.plot:
             plt.figure(figsize=(6, 4))
             plt.hist(np.arange(len(frequencies)), bins=len(frequencies) //
-                     2**2, weights=frequencies, label="Chunks Distribution")
+                     2**(2 * key_length), weights=frequencies, label="Chunks Distribution")
             plt.title("Chunks Distribution")
             plt.xlabel("Chunk Content")
             plt.ylabel("Frequency")
-            plt.legend()
+            plt.legend(loc=1)
             plt.tight_layout()
+
+            print(np.max(frequencies))
+            print(plt.ylim())
+
             plt.savefig(f"chunks_distribution_{key_length}.svg")
             plt.show()
 
