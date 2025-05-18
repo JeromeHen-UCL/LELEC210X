@@ -15,10 +15,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import optuna
 from rich.logging import RichHandler
+from scipy.interpolate import griddata
 import seaborn as sns
 from sklearn.decomposition import PCA
 from sklearn.metrics import accuracy_score, confusion_matrix
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import cross_val_score, StratifiedKFold, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -31,7 +32,7 @@ CLASS_NAMES = ("background", "chainsaw", "fire", "fireworks", "gunshot")
 
 OBJ_SCORE_SYNTH_FRAC = .2
 OBJ_SCORE_REAL_FRAC = 1 - OBJ_SCORE_SYNTH_FRAC
-OBJ_PCA_PENALTY = 0.1  # penalty for too many PCA components
+OBJ_PCA_PENALTY = 5e-4  # penalty for too many PCA components
 
 SHOW_SPE_TRUE = "fireworks"
 SHOW_SPE_PRED = "chainsaw"
@@ -76,7 +77,7 @@ def load_data(args: argparse.Namespace) -> tuple[np.ndarray,
 
     db_mels, db_labels = load_db(args)
     X_train, db_mels_test, y_train, y_test = train_test_split(
-        db_mels, db_labels, stratify=db_labels)
+        db_mels, db_labels, stratify=db_labels, random_state=42)
 
     melvecs_classes = []
     for class_name in CLASS_NAMES:
@@ -124,7 +125,7 @@ def get_real_accuracy(y_real: np.ndarray, y_pred: np.ndarray) -> float:
         for yt in y_real_filtered
     ])
 
-    return accuracy_score(y_real_filtered, y_pred_filtered, sample_weight=weights)
+    return float(accuracy_score(y_real_filtered, y_pred_filtered, sample_weight=weights))
 
 
 def objective(
@@ -148,8 +149,8 @@ def objective(
         float: the cross validation score
     """
 
-    n_components = trial.suggest_int("n_components", 5, MELS_LEN * MELVECS_LEN)  # PCA components
-    n_neighbors = trial.suggest_int("n_neighbors", 1, 200)  # k-NN neighbors
+    n_components = trial.suggest_int("n_components", 5, 200)  # PCA components
+    n_neighbors = trial.suggest_int("n_neighbors", 1, 100)  # k-NN neighbors
 
     # Create pipeline
     pipeline = Pipeline([
@@ -158,12 +159,13 @@ def objective(
         ("knn", KNeighborsClassifier(n_neighbors=n_neighbors))  # Classification
     ])
 
-    score_synth = cross_val_score(pipeline, X_train, y_train, cv=5, scoring="accuracy").mean()
+    cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+    score_synth = cross_val_score(pipeline, X_train, y_train, cv=cv, scoring="accuracy").mean()
     pipeline = pipeline.fit(X_train, y_train)
     y_real_pred = pipeline.predict(X_real)
     score_real = get_real_accuracy(y_real, y_real_pred)
 
-    pca_penality = OBJ_PCA_PENALTY * n_components / (MELS_LEN * MELVECS_LEN)
+    pca_penality = OBJ_PCA_PENALTY * n_components
 
     return OBJ_SCORE_SYNTH_FRAC * score_synth + OBJ_SCORE_REAL_FRAC * score_real - pca_penality
 
@@ -177,15 +179,47 @@ def show_cm(cm: np.ndarray, label: str) -> None:
         label (str): label for the confusion matrix
     """
 
-    plt.figure(figsize=(6, 5))
+    plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt='.2f', cmap="jet",
                 xticklabels=CLASS_NAMES, yticklabels=CLASS_NAMES)
     plt.xlabel("Predicted")
-    # plt.xticks(np.arange(len(CLASS_NAMES))+.5, CLASS_NAMES, rotation=45)
+    plt.xticks(np.arange(len(CLASS_NAMES))+.5, CLASS_NAMES, rotation=45)
     plt.ylabel("Actual")
-    # plt.yticks(np.arange(len(CLASS_NAMES))+.5, CLASS_NAMES, rotation=45)
+    plt.yticks(np.arange(len(CLASS_NAMES))+.5, CLASS_NAMES, rotation=45)
     plt.title(f"Confusion matrix on {label.capitalize()} data")
     plt.savefig(f"cm_{label}.svg")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_optuna_contour(study: optuna.Study, x_param="n_components", y_param="n_neighbors") -> None:
+    """
+    Plot optuna study result contour.
+
+    Args:
+        study (optuna.Study): study to get the results from
+        x_param (str, optional): the name of the param to change in x. Defaults to "n_components".
+        y_param (str, optional): the name of the param to change in y. Defaults to "n_neighbors".
+    """
+
+    trials = [t for t in study.trials if t.values and x_param in t.params and y_param in t.params]
+    x = np.array([t.params[x_param] for t in trials])
+    y = np.array([t.params[y_param] for t in trials])
+    z = np.array([t.value for t in trials])
+
+    xi = np.linspace(x.min(), x.max(), 200)
+    yi = np.linspace(y.min(), y.max(), 200)
+    xi, yi = np.meshgrid(xi, yi)
+    zi = griddata((x, y), z, (xi, yi), method='cubic')
+
+    _, ax = plt.subplots(figsize=(6, 4))
+    contour = ax.contourf(xi, yi, zi, levels=15, cmap="jet")
+    plt.colorbar(contour)
+    ax.scatter(x, y, s=25, marker='+', color="black", alpha=.3)
+    ax.set_xlabel(x_param)
+    ax.set_ylabel(y_param)
+    plt.tight_layout()
+    plt.savefig("hyperparams_opti.svg")
     plt.show()
 
 
@@ -229,13 +263,16 @@ def main(args: argparse.Namespace) -> None:
     sampler = optuna.samplers.TPESampler(seed=42)
     hyperparam_study = optuna.create_study(
         study_name="Hyperparam Optimizer",
+        load_if_exists=True,
+        storage="sqlite:///model_hyperparams.db",   # any RDB URL is fine
         direction="maximize",
         sampler=sampler
     )  # Maximize accuracy
-    hyperparam_study.optimize(
-        partial(objective, X_train=X_train, y_train=y_train, X_real=X_real, y_real=y_real),
-        n_trials=30, show_progress_bar=True
-    )
+    if not args.only_plot:
+        hyperparam_study.optimize(
+            partial(objective, X_train=X_train, y_train=y_train, X_real=X_real, y_real=y_real),
+            n_trials=150, show_progress_bar=True, n_jobs=1
+        )
 
     # [3] Extract best pipeline
     best_hyperparams = hyperparam_study.best_params
@@ -288,11 +325,20 @@ def main(args: argparse.Namespace) -> None:
     for cm, label in zip((cm_synth, cm_real), ("synthetic", "real")):
         show_cm(cm, label)
 
-    # [7] Show specific melspecs
+    plot_optuna_contour(hyperparam_study)
+
+    # [D] Show specific melspecs
     # show_specifics(X_real, y_real, y_pred_test, SHOW_SPE_TRUE, SHOW_SPE_PRED)
 
 
 if __name__ == "__main__":
+    # try:
+    #     os.remove("model_hyperparams.db")
+    # except FileNotFoundError:
+    #     pass
+    os.environ["PYTHONHASHSEED"] = "42"
+    np.random.seed(42)
+
     parser = argparse.ArgumentParser(description="Train a new model on optimized hyperparameters.")
 
     parser.add_argument(
@@ -300,6 +346,10 @@ if __name__ == "__main__":
         type=str,
         default="",
         help="Directory containing the .npy dataset arrays")
+    parser.add_argument(
+        "--only_plot",
+        action="store_true",
+        help="Only do the plots, not the optimization")
     parser.add_argument(
         "--verbose",
         type=str,
